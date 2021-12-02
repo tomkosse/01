@@ -1,22 +1,49 @@
 use std::io::BufWriter;
 use ferris_says::say;
 use std::io::stdout;
-
-struct Arguments {
-    extra_message: String
-}
+use std::fs;
+use std::env;
 
 fn main() {
-    let stdout = stdout();
-    let message = String::from("Hello friends! My name is CrabTom!");    
-    let width = message.chars().count();
+    let mut horpos = 0;
+    let mut depth  = 0;
+    let mut aim = 0;
 
-    let mut writer = BufWriter::new(stdout.lock());
-    say(message.as_bytes(), width, &mut writer).unwrap();
+    let args: Vec<String> = env::args().collect();
 
-    let args = Arguments {
-        extra_message: std::env::args().nth(1).expect("No extra message supplied")
-    };
+    let input = fs::read_to_string(&args[1])
+        .expect("Couldn't read file");
 
-    say(args.extra_message.as_bytes(), args.extra_message.chars().count(), &mut writer).unwrap();
+
+    for line in input.lines() {
+        let terms = line.split_whitespace().collect::<Vec<&str>>();
+        let direction = terms[0];
+        let delta = terms[1].parse::<i32>().unwrap();
+
+        if direction == "up" {
+            aim -= delta;
+        }
+        if direction == "down" {
+            aim += delta;
+        }
+        if direction == "forward" {
+            horpos += delta;
+            depth += aim * delta;
+        }
+
+        let mut output = "".to_owned();
+        output.push_str(&horpos.to_string());
+        output.push_str(" ");
+        output.push_str(&depth.to_string());
+        output.push_str(" ");
+        output.push_str(&aim.to_string());
+        output.push_str("=");
+        output.push_str(&(&horpos * &depth).to_string());
+
+        let stdout = stdout();
+        let mut writer = BufWriter::new(stdout.lock());
+        let outputwidth = output.chars().count();
+        say(output.as_bytes(), outputwidth, &mut writer).unwrap();
+    }
+
 }
