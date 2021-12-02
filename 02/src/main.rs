@@ -22,20 +22,24 @@ fn main() {
         if direction == "up" {
             aim -= delta;
         }
-        if direction == "down" {
+        else if direction == "down" {
             aim += delta;
         }
-        if direction == "forward" {
+        else if direction == "forward" {
             horpos += delta;
             depth += aim * delta;
         }
     }
+    
+    print(horpos, depth, aim);
+}
 
-    let mut output = "".to_owned();
+fn print(horpos: i32, depth: i32, aim: i32) {
+    let mut output = "hor: ".to_owned();
     output.push_str(&horpos.to_string());
-    output.push_str(" ");
+    output.push_str(" depth: ");
     output.push_str(&depth.to_string());
-    output.push_str(" ");
+    output.push_str(" aim: ");
     output.push_str(&aim.to_string());
     output.push_str("=");
     output.push_str(&(&horpos * &depth).to_string());
