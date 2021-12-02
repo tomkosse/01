@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class App {
     public static void main(String[] args) {
-        try (var fr = new FileReader(new File("input.txt"))) {
+        try (var fr = new FileReader(new File(args[0]))) {
             var br = new BufferedReader(fr);
             while (br.ready()) {
                 System.out.println(br.readLine());
