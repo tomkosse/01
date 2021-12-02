@@ -3,3 +3,4 @@ obj/
 target/
 *.out
 *.dSYM/
+.vscode/

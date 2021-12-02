@@ -1,0 +1,1 @@
+mvn package && java -jar target/aocday3-1.0-SNAPSHOT.jar 

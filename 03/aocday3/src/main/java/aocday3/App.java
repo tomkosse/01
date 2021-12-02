@@ -1,9 +1,19 @@
 package aocday3;
 
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class App {
+    public static void main(String[] args) {
+        try (var fr = new FileReader(new File("input.txt"))) {
+            var br = new BufferedReader(fr);
+            while (br.ready()) {
+                System.out.println(br.readLine());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
