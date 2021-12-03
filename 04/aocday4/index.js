@@ -1,12 +1,13 @@
-const { createServer } = require('http');
-const PORT = parseInt(process.env.PORT, 10) || 3000;
+const fs = require('fs');
 
-const server = createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/html');
-  res.end('<h1>Hello World</h1>');
-});
+console.log("Hello world");
 
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}/`);
+fs.readFile('input.txt', 'utf-8', (err, data) =>
+{
+  if(err) {
+    console.log(err);
+  }
+  console.log(data);
+  const lines = data.split("\n");
+  lines.forEach((line, idx) => console.log('Regel ' + idx + ': ' + line));
 });
