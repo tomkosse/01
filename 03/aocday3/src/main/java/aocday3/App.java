@@ -27,9 +27,9 @@ public class App {
 
     private static int bitsToNumber(ArrayList<Integer> bits) {
         int result = 0;
-        for (int i = 0; i < bits.size(); i++) {
+        for (var bit : bits) {
             result = result << 1;
-            result += bits.get(i);
+            result += bit;
         }
         return result;
     }
@@ -43,11 +43,12 @@ public class App {
         var rotatedMatrix = rotateMatrix(matrix);
 
         var bits = rotatedMatrix.get(index);
-
         var discriminatorNumber = discriminatorFinder.apply(bits);
 
-        var reducedMatrix = matrix.stream().filter(line -> line.get(index) == discriminatorNumber)
+        var reducedMatrix = matrix.stream()
+                .filter(line -> line.get(index) == discriminatorNumber)
                 .collect(Collectors.toCollection(ArrayList::new));
+                
         return reduceMatrixByDiscriminator(reducedMatrix, discriminatorFinder, index + 1);
     }
 
