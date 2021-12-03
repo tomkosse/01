@@ -48,7 +48,7 @@ public class App {
         var reducedMatrix = matrix.stream()
                 .filter(line -> line.get(index) == discriminatorNumber)
                 .collect(Collectors.toCollection(ArrayList::new));
-                
+
         return reduceMatrixByDiscriminator(reducedMatrix, discriminatorFinder, index + 1);
     }
 
@@ -82,8 +82,7 @@ public class App {
         for (int i = 0; i < lineLength; i++) {
             ArrayList<Integer> bits = new ArrayList<>();
             for (ArrayList<Integer> line : lines) {
-                int intVal = Integer.valueOf(line.get(i));
-                bits.add(intVal);
+                bits.add(line.get(i));
             }
 
             rotatedArray.add(bits);
