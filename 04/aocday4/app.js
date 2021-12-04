@@ -23,8 +23,8 @@ fs.readFile('input.txt', 'utf-8', (err, data) => {
   });
   boardStates.push({ board: currentBoard, hasWon: false, winOrder: null });
 
-  let numbersDrawn = 0;
-  while (numbersDrawn < numbers.length) {
+  for(let numbersDrawn = 0; numbersDrawn < numbers.length; numbersDrawn++)
+  {
     const drawnNumber = numbers[numbersDrawn];
     
     boardStates.forEach((board, bidx) =>
@@ -37,7 +37,6 @@ fs.readFile('input.txt', 'utf-8', (err, data) => {
       })
     );
     processWinstates(boardStates, numbersDrawn, drawnNumber);
-    numbersDrawn++;
   }
 
   console.log(boardStates.sort((a,b) => a.winOrder - b.winOrder));
