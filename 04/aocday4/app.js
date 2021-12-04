@@ -42,14 +42,14 @@ fs.readFile('input.txt', 'utf-8', (err, data) => {
   console.log(boardStates.sort((a,b) => a.winOrder - b.winOrder));
 });
 
-function processWinstates(boards, numbersDrawn, nextNumber) {
+function processWinstates(boards, numbersDrawn, drawnNumber) {
   boards.filter(b => !b.hasWon).forEach(board => {
     let winnerFound = processBoard(board.board) || processBoard(rotate(board.board));
     
     if (winnerFound) {
       board.hasWon = true;
       board.winOrder = numbersDrawn;
-      board.score = determineScore(board.board, nextNumber);
+      board.score = determineScore(board.board, drawnNumber);
     }
   });
 }
@@ -68,10 +68,10 @@ function processBoard(board) {
   return winnerFound;
 }
 
-function determineScore(board, nextNumber) {
+function determineScore(board, drawnNumber) {
   const unmarkedSum = board
               .flatMap(line => line)
               .filter(s => !s.includes("x"))
               .reduce((acc, x) => acc + Number.parseInt(x), 0);
-  return unmarkedSum * nextNumber;
+  return unmarkedSum * drawnNumber;
 }
