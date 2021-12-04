@@ -12,7 +12,7 @@ fs.readFile('input.txt', 'utf-8', (err, data) => {
   let numbers = lines[0].split(',')
   const boardStates = [];
   let currentBoard = null;
-  lines.slice(1).forEach((line, idx) => {
+  lines.slice(1).forEach((line) => {
     if (line === "") {
       if (currentBoard !== null) {
         boardStates.push({ board: currentBoard, hasWon: false, winOrder: null });
@@ -27,10 +27,9 @@ fs.readFile('input.txt', 'utf-8', (err, data) => {
   boardStates.push({ board: currentBoard, hasWon: false, winOrder: null });
 
   let numbersDrawn = 0;
-
-  while (numbers.length > 0) {
-    const drawnNumber = numbers[0];
-    numbers = numbers.slice(1);
+  while (numbersDrawn < numbers.length) {
+    const drawnNumber = numbers[numbersDrawn];
+    
     boardStates.forEach((board, bidx) =>
       board.board.forEach((line, lidx) => {
         line.forEach((square, sidx) => {
@@ -49,10 +48,8 @@ fs.readFile('input.txt', 'utf-8', (err, data) => {
 
 function processWinstates(boards, numbersDrawn, nextNumber) {
   boards.filter(b => !b.hasWon).forEach(board => {
-    let winnerFound = processBoard(board.board);
-    if (!winnerFound) {
-      winnerFound = processBoard(rotate(board.board));
-    }
+    let winnerFound = processBoard(board.board) || processBoard(rotate(board.board));
+    
     if (winnerFound) {
       board.hasWon = true;
       board.winOrder = numbersDrawn;
@@ -68,13 +65,7 @@ function rotate(board) {
 function processBoard(board) {
   let winnerFound = false;
   board.forEach(line => {
-    let amountCrossedOff = 0;
-    line.forEach(square => {
-      if (square.includes("x")) {
-        amountCrossedOff++;
-      }
-    });
-    if (amountCrossedOff == line.length) {
+    if (line.every(s => s.includes("x"))) {
       winnerFound = true;
     }
   });
@@ -82,13 +73,9 @@ function processBoard(board) {
 }
 
 function determineScore(board, nextNumber) {
-  let unmarkedSum = 0;
-  board.forEach(line => {
-    line.forEach(square => {
-      if (!square.includes("x")) {
-        unmarkedSum += Number.parseInt(square);
-      }
-    });
-  });
+  const unmarkedSum = board
+              .flatMap(line => line)
+              .filter(s => !s.includes("x"))
+              .reduce((acc, x) => acc + Number.parseInt(x), 0);
   return unmarkedSum * nextNumber;
 }
