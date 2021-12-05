@@ -13,8 +13,8 @@ namespace _05
                     .Select(line => line.Split(" -> "))
                     .Select(str =>
                         (
-                            leftHand: str[0].Split(",", StringSplitOptions.RemoveEmptyEntries).Select(int.Parse),
-                            rightHand: str[1].Split(",", StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)
+                            leftHand: str[0].Split(",").Select(int.Parse),
+                            rightHand: str[1].Split(",").Select(int.Parse)
                         )
                     );
             var allPairs = rangePairs
@@ -22,7 +22,7 @@ namespace _05
                             .Union(rangePairs.Select(pair => pair.rightHand));
             int globalMaxX = allPairs.Max(p => p.First()) + 1;
             int globalMaxY = allPairs.Max(p => p.Last()) + 1;
-            
+
             int[,] matrix = new int[globalMaxX, globalMaxY];
             foreach (var rangePair in rangePairs)
             {
@@ -30,13 +30,11 @@ namespace _05
                 var y1 = rangePair.leftHand.Last();
                 var x2 = rangePair.rightHand.First();
                 var y2 = rangePair.rightHand.Last();
-                var minY = Math.Min(y1, y2);
-                var maxY = Math.Max(y1, y2);
-                var minX = Math.Min(x1, x2);
-                var maxX = Math.Max(x1, x2);
 
                 if (x1 != x2 && y1 == y2)
                 {
+                    var minX = Math.Min(x1, x2);
+                    var maxX = Math.Max(x1, x2);
                     for (int i = minX; i <= maxX; i++)
                     {
                         matrix[i, y1]++;
@@ -44,6 +42,8 @@ namespace _05
                 }
                 else if (y1 != y2 && x1 == x2)
                 {
+                    var minY = Math.Min(y1, y2);
+                    var maxY = Math.Max(y1, y2);
                     for (int i = minY; i <= maxY; i++)
                     {
                         matrix[x1, i]++;
@@ -53,7 +53,7 @@ namespace _05
                 { // Diagonal
                     int cursorY = y1;
                     int cursorX = x1;
-                    while (cursorX != x2 && cursorY != y2)
+                    while (cursorX != x2)
                     {
                         matrix[cursorX, cursorY]++;
                         cursorX += cursorX >= x2 ? -1 : 1;
