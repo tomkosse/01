@@ -31,44 +31,23 @@ namespace _05
                 var x2 = coordPair.rightHand.First();
                 var y2 = coordPair.rightHand.Last();
 
-                if (x1 != x2 && y1 == y2)
+                int cursorY = y1;
+                int cursorX = x1;
+                while (cursorX != x2 || cursorY != y2)
                 {
-                    var minX = Math.Min(x1, x2);
-                    var maxX = Math.Max(x1, x2);
-                    for (int i = minX; i <= maxX; i++)
-                    {
-                        matrix[i, y1]++;
-                    }
-                }
-                else if (y1 != y2 && x1 == x2)
-                {
-                    var minY = Math.Min(y1, y2);
-                    var maxY = Math.Max(y1, y2);
-                    for (int i = minY; i <= maxY; i++)
-                    {
-                        matrix[x1, i]++;
-                    }
-                }
-                else
-                { // Diagonal
-                    int cursorY = y1;
-                    int cursorX = x1;
-                    while (cursorX != x2)
-                    {
-                        matrix[cursorX, cursorY]++;
-                        cursorX += cursorX >= x2 ? -1 : 1;
-                        cursorY += cursorY >= y2 ? -1 : 1;
-                    }
                     matrix[cursorX, cursorY]++;
+                    cursorX += cursorX > x2 ? -1 : (cursorX == x2 ? 0 : 1);
+                    cursorY += cursorY > y2 ? -1 : (cursorY == y2 ? 0 : 1);
                 }
+                matrix[cursorX, cursorY]++;
             }
 
             int intersections = 0;
-            for (int i = 0; i < globalMaxY; i++)
+            for (int y = 0; y < globalMaxY; y++)
             {
-                for (int n = 0; n < globalMaxX; n++)
+                for (int x = 0; x < globalMaxX; x++)
                 {
-                    var cell = matrix[n, i];
+                    var cell = matrix[x, y];
                     Console.Write(cell);
                     if (cell > 1)
                     {
