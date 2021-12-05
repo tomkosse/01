@@ -8,7 +8,7 @@ namespace _05
     {
         static void Main(string[] args)
         {
-            var rangePairs = File
+            var coordPairs = File
                     .ReadAllLines(args[0])
                     .Select(line => line.Split(" -> "))
                     .Select(str =>
@@ -17,19 +17,19 @@ namespace _05
                             rightHand: str[1].Split(",").Select(int.Parse)
                         )
                     );
-            var allPairs = rangePairs
+            var allPairs = coordPairs
                             .Select(pair => pair.leftHand)
-                            .Union(rangePairs.Select(pair => pair.rightHand));
+                            .Union(coordPairs.Select(pair => pair.rightHand));
             int globalMaxX = allPairs.Max(p => p.First()) + 1;
             int globalMaxY = allPairs.Max(p => p.Last()) + 1;
 
             int[,] matrix = new int[globalMaxX, globalMaxY];
-            foreach (var rangePair in rangePairs)
+            foreach (var coordPair in coordPairs)
             {
-                var x1 = rangePair.leftHand.First();
-                var y1 = rangePair.leftHand.Last();
-                var x2 = rangePair.rightHand.First();
-                var y2 = rangePair.rightHand.Last();
+                var x1 = coordPair.leftHand.First();
+                var y1 = coordPair.leftHand.Last();
+                var x2 = coordPair.rightHand.First();
+                var y2 = coordPair.rightHand.Last();
 
                 if (x1 != x2 && y1 == y2)
                 {
@@ -68,9 +68,9 @@ namespace _05
             {
                 for (int n = 0; n < globalMaxX; n++)
                 {
-                    var column = matrix[n, i];
-                    Console.Write(column);
-                    if (column > 1)
+                    var cell = matrix[n, i];
+                    Console.Write(cell);
+                    if (cell > 1)
                     {
                         intersections++;
                     }
