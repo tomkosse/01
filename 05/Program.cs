@@ -31,15 +31,13 @@ namespace _05
                 var x2 = coordPair.rightHand.First();
                 var y2 = coordPair.rightHand.Last();
 
-                int cursorY = y1;
-                int cursorX = x1;
-                while (cursorX != x2 || cursorY != y2)
+                while (x1 != x2 || y1 != y2)
                 {
-                    matrix[cursorX, cursorY]++;
-                    cursorX += cursorX > x2 ? -1 : (cursorX == x2 ? 0 : 1);
-                    cursorY += cursorY > y2 ? -1 : (cursorY == y2 ? 0 : 1);
+                    matrix[x1, y1]++;
+                    x1 += x1 > x2 ? -1 : (x1 == x2 ? 0 : 1);
+                    y1 += y1 > y2 ? -1 : (y1 == y2 ? 0 : 1);
                 }
-                matrix[cursorX, cursorY]++;
+                matrix[x1, y1]++;
             }
 
             int intersections = 0;
