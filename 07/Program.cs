@@ -51,13 +51,13 @@ namespace _07
             return lookupArray;
         }
 
-        private static int DetermineFuelConsumptionPart2(int point, IEnumerable<int> horizontalPositions, int currentLowestFuelConsumption, int[] fuelTable)
+        private static int DetermineFuelConsumptionPart2(int point, IEnumerable<int> horizontalPositions, int currentLowestFuelConsumption, int[] fuelLookup)
         {
             var expended = 0;
             foreach(var hp in horizontalPositions)
             {
                 var dist = Math.Abs(hp - point);
-                expended += fuelTable[dist];
+                expended += fuelLookup[dist];
                 if(expended > currentLowestFuelConsumption)
                 {
                     return int.MaxValue;
