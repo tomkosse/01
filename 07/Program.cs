@@ -19,7 +19,7 @@ namespace _07
             var max = horizontalPositions.Max();
             var answerPartOne = Enumerable
                         .Range(min, max - min)
-                        .Min(point => DetermineFuelConsumptionPart1(point, horizontalPositions));
+                        .Min(point => horizontalPositions.Sum(hp =>  Math.Abs(hp - point)));
 
             System.Console.WriteLine("Part 1: " + answerPartOne);
             
@@ -44,19 +44,11 @@ namespace _07
         private static int[] CreateFuelLookup(int maxRequiredSize)
         {
             int[] lookupArray = new int[maxRequiredSize];
-            lookupArray[0] = 0;
             for(int i=1; i < maxRequiredSize; i++)
             {
                 lookupArray[i] = lookupArray[i-1] + i;
             }
             return lookupArray;
-        }
-
-        private static int DetermineFuelConsumptionPart1(int point, IEnumerable<int> horizontalPositions)
-        {
-            var expended = horizontalPositions.Sum(hp =>  Math.Abs(hp - point));
-            
-            return expended;
         }
 
         private static int DetermineFuelConsumptionPart2(int point, IEnumerable<int> horizontalPositions, int currentLowestFuelConsumption, int[] fuelTable)
