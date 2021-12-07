@@ -27,7 +27,7 @@ namespace _07
             var fuelLookup = CreateFuelLookup(max + 1);
 
             var lowestFuelConsumption = int.MaxValue;
-            for(int i= horizontalPositions.Min(); i <= max; i++)
+            for(int i = min; i <= max; i++)
             {
                 var consumption = DetermineFuelConsumptionPart2(i, horizontalPositions, lowestFuelConsumption, fuelLookup);
                 if(consumption < lowestFuelConsumption)
