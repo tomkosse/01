@@ -36,7 +36,8 @@ namespace _07
                 }
             }
 
-            System.Console.WriteLine($"Time elapsed: {(DateTime.Now - start).TotalMilliseconds}ms");
+            var timeElapsed = (DateTime.Now - start).TotalMilliseconds;
+            System.Console.WriteLine($"Time elapsed: {timeElapsed}ms");
                 
             System.Console.WriteLine("Part 2: " + lowestFuelConsumption);
         }

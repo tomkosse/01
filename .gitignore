@@ -4,3 +4,4 @@ target/
 *.out
 *.dSYM/
 .vscode/
+.DS_Store
