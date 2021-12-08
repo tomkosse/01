@@ -83,7 +83,7 @@ namespace _08
             var start = DateTime.Now;
             foreach (var line in lines)
             {
-                var splitted = line.Split("|", StringSplitOptions.TrimEntries).ToArray();
+                var splitted = line.Split(" | ").ToArray();
                 var signalPattern = splitted[0].Split(" ");
                 var outputValues = splitted[1].Split(" ");
                 answerPart1 += outputValues.Count(ov => hits.Contains(ov.Length));
@@ -95,20 +95,10 @@ namespace _08
 
                 var possiblePairs = GenerateAllPossibleDecodingPairs(digits);
 
-                var possibleDecodingTables = new List<IEnumerable<(char, char)>>() { new List<(char, char)>() };
+                IEnumerable<IEnumerable<(char, char)>> possibleDecodingTables = new List<IEnumerable<(char, char)>>() { new List<(char, char)>() };
                 foreach (var pm in possiblePairs.GroupBy(e => e.Item1))
                 {
-                    var copiedTables = new List<IEnumerable<(char, char)>>();
-                    foreach (var option in pm)
-                    {
-                        foreach (var variant in possibleDecodingTables)
-                        {
-                            var copiedTable = variant.ToList();
-                            copiedTable.Add(option);
-                            copiedTables.Add(copiedTable);
-                        }
-                    }
-                    possibleDecodingTables = copiedTables;
+                    possibleDecodingTables = pm.Join(possibleDecodingTables, a => 1, b => 1, (a, b) => b.Append(a));
                 }
 
                 IEnumerable<(char, char)> decodingTable = possibleDecodingTables
@@ -120,7 +110,6 @@ namespace _08
                                     .First();
 
                 int outputValue = int.Parse(string.Join("", outputValues.Select(sp => new Digit(sp, decodingTable).Value)));
-                var translated = string.Join(" ", signalPattern.Select(sp => new Digit(sp, decodingTable).Value));
                 answerPart2 += outputValue;
             }
             var end = DateTime.Now;
