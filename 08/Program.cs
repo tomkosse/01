@@ -7,15 +7,15 @@ namespace _08
 {
     public class Digit
     {
-        private string[] _validDigits = 
+        private string[] _validDigits =
         {
-            "abcefg", "cf", "acdeg", "acdfg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg"
+            "abcefg", "cf", "acdeg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg"
         };
         private readonly string input;
 
-        public int? Value 
+        public int? Value
         {
-            get 
+            get
             {
                 var findCorrectDigit = Enumerable.Range(0, _validDigits.Length).Where(i => _validDigits[i] == input);
                 return findCorrectDigit.Any() ? findCorrectDigit.First() : -1;
@@ -24,18 +24,18 @@ namespace _08
 
         public bool IsValid
         {
-            get {
-                System.Console.WriteLine("Validating " + input + " against table");
+            get
+            {
                 return _validDigits.Contains(input);
             }
         }
 
         public Digit(string input, IEnumerable<(char, char)> decodingTable)
         {
-            System.Console.WriteLine($"Creating digit with input {input} and decodingtable {string.Join(" - ", decodingTable)}");
             var decoded = input
                             .ToCharArray()
                             .Select(c => decodingTable.Where(combo => combo.Item1 == c).First().Item2)
+                            .OrderBy(c => c)
                             .ToArray();
 
             this.input = new String(decoded);
@@ -44,16 +44,15 @@ namespace _08
 
     public class EncodedDigit
     {
-        
-        public EncodedDigit(int? digit, char[] signalSegments)
+        public EncodedDigit(string signalSegments)
         {
-            Digit = digit;
-            SignalSegments = signalSegments;
+            SignalSegments = signalSegments
+                                .ToCharArray()
+                                .OrderBy(c => c)
+                                .ToArray();
         }
 
-        public int? Digit { get; }
         public char[] SignalSegments { get; }
-
 
         public int Length
         {
@@ -62,146 +61,93 @@ namespace _08
                 return SignalSegments.Length;
             }
         }
-
-        public override string ToString()
-        {
-            return "Digit: " + (Digit?.ToString() ?? "(unknown)") + "  | SignalSegments: " + new String(SignalSegments);
-        }
     }
 
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
             var lines = File
                 .ReadAllLines(args[0]);
 
-            var digits = new List<EncodedDigit>();
+            // Part 1
+            var answerPart1 = 0;
+            foreach (var line in lines)
+            {
+                var splitted = line.Split("|").Select(el => el.Trim()).ToArray();
+                var outputValues = splitted[1].Split(" ");
+                var hits = new int[] { 2, 3, 4, 7 };
+                answerPart1 += outputValues.Count(ov => hits.Contains(ov.Length));
+            }
+            System.Console.WriteLine("Part 1 answer: " + answerPart1);
+
+            // Part 2
+            int answerPart2 = 0;
             foreach (var line in lines)
             {
                 var splitted = line.Split("|").Select(el => el.Trim()).ToArray();
                 var signalPattern = splitted[0].Split(" ");
+                var outputValues = splitted[1].Split(" ");
 
-                signalPattern.Select(pat => new string(pat.ToCharArray().OrderBy(c => c).ToArray())).Distinct().ToList().ForEach(seg =>
+                var digits = signalPattern
+                                .Select(sp => new EncodedDigit(sp))
+                                .OrderBy(d => d.Length)
+                                .ToList();
+
+                var possiblePairs = GenerateAllPossibleDecodingPairs(digits);
+
+                var possibleDecodingTables = new List<IEnumerable<(char, char)>>() { new List<(char, char)>() };
+                foreach (var pm in possiblePairs.GroupBy(e => e.Item1))
                 {
-                    var encodedDigit = CreateEncodedDigits(seg);
-                    if (encodedDigit != null)
+                    var copiedTables = new List<IEnumerable<(char, char)>>();
+                    foreach (var option in pm)
                     {
-                        digits.Add(encodedDigit);
-                    }
-                });
-            }
-            System.Console.WriteLine("+++++");
-            foreach(var digit in digits)
-            {
-                System.Console.WriteLine(digit);
-            }
-            System.Console.WriteLine("+++++");
-
-            var certainMapping = new List<(char, char)>();
-            var possiblePairs = GenerateAllPossiblePairs(digits, certainMapping);
-            System.Console.WriteLine(string.Join(" - ", possiblePairs));
-
-            var possibleMapping = new List<(char, char)>();
-
-            foreach (var digit in digits)
-            {
-                foreach (var otherDigit in digits)
-                {
-                    var differentUnmappedSignalSegments = digit.SignalSegments.Except(otherDigit.SignalSegments);
-                    if (differentUnmappedSignalSegments.Count() == 1)
-                    {
-                        var uniqueSegment = differentUnmappedSignalSegments.First();
-
-                        System.Console.WriteLine("Unique segment: " + uniqueSegment);
-                        Console.WriteLine(digit);
-                        Console.WriteLine(otherDigit);
-
-                        var pairsForMatch = PossibleCorrectSegmentsForDigit(otherDigit, certainMapping.Select(cm => cm.Item2).ToArray()).SelectMany(c => c);
-
-                        var pairsForCurrent = PossibleCorrectSegmentsForDigit(digit, certainMapping.Select(cm => cm.Item2).ToArray()).SelectMany(c => c);
-                        var options = possiblePairs.Where(pp => pp.Item1 == uniqueSegment && pairsForCurrent.Contains(pp.Item2));
-
-                        if (options.Count() == 1)
+                        foreach (var variant in possibleDecodingTables)
                         {
-                            var sol = options.Single();
-                            certainMapping.Add(sol);
-                        }
-                        else {
-                            possibleMapping.AddRange(options.Where(o => !possibleMapping.Contains(o)));
+                            var copiedTable = variant.ToList();
+                            copiedTable.Add(option);
+                            copiedTables.Add(copiedTable);
                         }
                     }
+                    possibleDecodingTables = copiedTables;
                 }
-            }
-            System.Console.WriteLine("Certain Mapping: " + string.Join(" - ", certainMapping));
-            System.Console.WriteLine("Possible Mapping: " + string.Join(" - ", possibleMapping));
-            System.Console.WriteLine("======");
 
-            var variants = new List<IEnumerable<(char, char)>>();
-            variants.Add(certainMapping);
-            foreach(var pm in possibleMapping.GroupBy(e => e.Item1))
-            {
-                var copiedVariants = new List<IEnumerable<(char, char)>>();
-                foreach(var option in pm)
-                {
-                    foreach(var variant in variants)
-                    {
-                        var copiedVariant = variant.ToList();
-                        copiedVariant.Add(option);
-                        copiedVariants.Add(copiedVariant);
-                    }
-                }
-                variants = copiedVariants;
+                IEnumerable<(char, char)> decodingTable = possibleDecodingTables
+                                    .Where(table =>
+                                        signalPattern
+                                            .Select(pattern => new Digit(pattern, table))
+                                            .All(digit => digit.IsValid)
+                                    )
+                                    .First();
+
+                int outputValue = int.Parse(string.Join("", outputValues.Select(sp => new Digit(sp, decodingTable).Value)));
+                var translated = string.Join(" ", signalPattern.Select(sp => new Digit(sp, decodingTable).Value));
+                System.Console.WriteLine("Signal pattern: " + translated + " Output value: " + outputValue);
+                answerPart2 += outputValue;
             }
 
-            foreach(var variant in variants)
-            {
-                System.Console.WriteLine("Possible variant: " + string.Join(" - ", variant));
-            }
-
-            foreach (var line in lines)
-            {
-                var splitted = line.Split("|").Select(el => el.Trim()).ToArray();
-                var signalPattern = splitted[0].Split(" ");
-                var validVariant = variants
-                                    .Where(v => signalPattern.Select(sp => new Digit(sp, v)).All(d => d.IsValid))
-                                    .ToList();
-                System.Console.WriteLine("Valid variant: " + string.Join(" - ", validVariant));
-            }
+            System.Console.WriteLine("======================================================");
+            System.Console.WriteLine("                                  Total output: " + answerPart2);
         }
 
-
-        private static EncodedDigit CreateEncodedDigits(string segment)
+        private static IEnumerable<(char, char)> GenerateAllPossibleDecodingPairs(List<EncodedDigit> knownDigits)
         {
-            switch (segment.Length)
-            {
-                case 2:
-                    return new EncodedDigit(1, segment.ToCharArray());
-                case 3:
-                    return new EncodedDigit(7, segment.ToCharArray());
-                case 4:
-                    return new EncodedDigit(4, segment.ToCharArray());
-                case 7:
-                    return new EncodedDigit(8, segment.ToCharArray());
-                default:
-                    return new EncodedDigit(null, segment.ToCharArray());
-            }
-        }
-
-        private static IEnumerable<(char, char)> GenerateAllPossiblePairs(List<EncodedDigit> knownDigits, List<(char, char)> certainMapping)
-        {
-            List<(char, char)> doNotGenerateFurther = certainMapping.ToList();
+            List<(char, char)> doNotGenerateFurther = new List<(char, char)>();
 
             List<(char, char)> possiblePairs = new List<(char, char)>();
-            foreach (var digit in knownDigits.OrderBy(kus => kus.Length))
+            foreach (var digit in knownDigits)
             {
-                var correctSegments = PossibleCorrectSegmentsForDigit(digit, doNotGenerateFurther.Select(cm => cm.Item2).ToArray()).SelectMany(c => c).ToArray();
-                var sigSegs = digit.SignalSegments.Except(doNotGenerateFurther.Select(cm => cm.Item1)).ToArray();
+                var correctSegments = PossibleCorrectSegmentsForDigit(digit)
+                                        .SelectMany(c => c)
+                                        .Except(doNotGenerateFurther.Select(d => d.Item2))
+                                        .ToArray();
+
+                var sigSegs = digit.SignalSegments.Except(doNotGenerateFurther.Select(cm => cm.Item1));
 
                 var allCombos = sigSegs.SelectMany(s => correctSegments.Select(cs => (s, cs)));
                 possiblePairs.AddRange(allCombos);
-                
-                if(correctSegments.Length == sigSegs.Length)
+
+                if (correctSegments.Length == sigSegs.Count())
                 {
                     doNotGenerateFurther.AddRange(allCombos);
                 }
@@ -209,40 +155,25 @@ namespace _08
             return possiblePairs.Distinct();
         }
 
-        private static IEnumerable<char[]> PossibleCorrectSegmentsForDigit(EncodedDigit digit, char[] exclude)
+        private static IEnumerable<string> PossibleCorrectSegmentsForDigit(EncodedDigit digit)
         {
-            IEnumerable<char[]> answer = null;
             switch (digit.Length)
             {
                 case 2:
-                    answer = new[] { "cf".ToCharArray() };
-                    break;
+                    return new[] { "cf" };
                 case 4:
-                    answer = new[] { "bcdf".ToCharArray() };
-                    break;
+                    return new[] { "bcdf" };
                 case 3:
-                    answer = new[] { "acf".ToCharArray() };
-                    break;
+                    return new[] { "acf" };
                 case 5:
-                    answer = new[]
-                    {
-                        "acdeg".ToCharArray(), "acdfg".ToCharArray(), "abdfg".ToCharArray()
-                    };
-                    break;
+                    return new[] { "acdeg", "acdfg", "abdfg" };
                 case 6:
-                    answer = new[]
-                    {
-                        "abcdefg".ToCharArray(), "abcdfg".ToCharArray(), "abdefg".ToCharArray()
-                    };
-                    break;
+                    return new[] { "abcdefg", "abcdfg", "abdefg" };
                 case 7:
-                    answer = new[] { "abcdefg".ToCharArray()};
-                    break;
+                    return new[] { "abcdefg" };
                 default:
-                    break;
+                    throw new InvalidOperationException("We're not supposed to get here");
             }
-
-            return answer.Select(a => a.Except(exclude).ToArray());
         }
     }
 }
