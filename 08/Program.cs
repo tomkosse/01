@@ -70,24 +70,16 @@ namespace _08
             var lines = File
                 .ReadAllLines(args[0]);
 
-            // Part 1
-            var answerPart1 = 0;
-            foreach (var line in lines)
-            {
-                var splitted = line.Split("|").Select(el => el.Trim()).ToArray();
-                var outputValues = splitted[1].Split(" ");
-                var hits = new int[] { 2, 3, 4, 7 };
-                answerPart1 += outputValues.Count(ov => hits.Contains(ov.Length));
-            }
-            System.Console.WriteLine("Part 1 answer: " + answerPart1);
+            var hits = new int[] { 2, 3, 4, 7 };
 
-            // Part 2
+            var answerPart1 = 0;
             int answerPart2 = 0;
             foreach (var line in lines)
             {
                 var splitted = line.Split("|", StringSplitOptions.TrimEntries).ToArray();
                 var signalPattern = splitted[0].Split(" ");
                 var outputValues = splitted[1].Split(" ");
+                answerPart1 += outputValues.Count(ov => hits.Contains(ov.Length));
 
                 var digits = signalPattern
                                 .Select(sp => new EncodedDigit(sp))
@@ -127,7 +119,7 @@ namespace _08
             }
 
             System.Console.WriteLine("======================================================");
-            System.Console.WriteLine("                                  Total output: " + answerPart2);
+            System.Console.WriteLine($"Part 1: {answerPart1}                             Part 2: {answerPart2}");
         }
 
         private static IEnumerable<(char, char)> GenerateAllPossibleDecodingPairs(List<EncodedDigit> knownDigits)
