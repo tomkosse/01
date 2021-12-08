@@ -7,17 +7,23 @@ namespace _08
 {
     public class Digit
     {
-        private string[] _validDigits =
+        public static string[] ValidDigits
         {
-            "abcefg", "cf", "acdeg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg"
-        };
+            get
+            {
+                return new string[] {
+                    "abcefg", "cf", "acdeg", "acdfg", "bcdf", "abdfg", "abdefg", "acf", "abcdefg", "abcdfg"
+                };
+            }
+        }
+
         private readonly string input;
 
         public int? Value
         {
             get
             {
-                var findCorrectDigit = Enumerable.Range(0, _validDigits.Length).Where(i => _validDigits[i] == input);
+                var findCorrectDigit = Enumerable.Range(0, ValidDigits.Length).Where(i => ValidDigits[i] == input);
                 return findCorrectDigit.Any() ? findCorrectDigit.First() : -1;
             }
         }
@@ -26,7 +32,7 @@ namespace _08
         {
             get
             {
-                return _validDigits.Contains(input);
+                return ValidDigits.Contains(input);
             }
         }
 
@@ -149,23 +155,7 @@ namespace _08
 
         private static IEnumerable<string> PossibleCorrectSegmentsForDigit(EncodedDigit digit)
         {
-            switch (digit.Length)
-            {
-                case 2:
-                    return new[] { "cf" };
-                case 4:
-                    return new[] { "bcdf" };
-                case 3:
-                    return new[] { "acf" };
-                case 5:
-                    return new[] { "acdeg", "acdfg", "abdfg" };
-                case 6:
-                    return new[] { "abcdefg", "abcdfg", "abdefg" };
-                case 7:
-                    return new[] { "abcdefg" };
-                default:
-                    throw new InvalidOperationException("We're not supposed to get here");
-            }
+            return Digit.ValidDigits.Where(vd => vd.Length == digit.Length).ToArray();
         }
     }
 }
