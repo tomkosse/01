@@ -85,7 +85,7 @@ namespace _08
             int answerPart2 = 0;
             foreach (var line in lines)
             {
-                var splitted = line.Split("|").Select(el => el.Trim()).ToArray();
+                var splitted = line.Split("|", StringSplitOptions.TrimEntries).ToArray();
                 var signalPattern = splitted[0].Split(" ");
                 var outputValues = splitted[1].Split(" ");
 
