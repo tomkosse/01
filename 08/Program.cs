@@ -80,6 +80,7 @@ namespace _08
 
             var answerPart1 = 0;
             int answerPart2 = 0;
+            var start = DateTime.Now;
             foreach (var line in lines)
             {
                 var splitted = line.Split("|", StringSplitOptions.TrimEntries).ToArray();
@@ -120,12 +121,11 @@ namespace _08
 
                 int outputValue = int.Parse(string.Join("", outputValues.Select(sp => new Digit(sp, decodingTable).Value)));
                 var translated = string.Join(" ", signalPattern.Select(sp => new Digit(sp, decodingTable).Value));
-                System.Console.WriteLine("Signal pattern: " + translated + " Output value: " + outputValue);
                 answerPart2 += outputValue;
             }
-
-            System.Console.WriteLine("======================================================");
+            var end = DateTime.Now;
             System.Console.WriteLine($"Part 1: {answerPart1}                             Part 2: {answerPart2}");
+            System.Console.WriteLine((end - start).TotalMilliseconds + "ms");
         }
 
         private static IEnumerable<(char, char)> GenerateAllPossibleDecodingPairs(List<EncodedDigit> knownDigits)
@@ -142,7 +142,9 @@ namespace _08
 
                 var sigSegs = digit.SignalSegments.Except(doNotGenerateFurther.Select(cm => cm.Item1));
 
-                var allCombos = sigSegs.SelectMany(s => correctSegments.Select(cs => (s, cs)));
+                var allCombos = sigSegs
+                    .SelectMany(s => correctSegments.Select(cs => (s, cs)));
+                    
                 possiblePairs.AddRange(allCombos);
 
                 if (correctSegments.Length == sigSegs.Count())
