@@ -73,13 +73,12 @@ namespace _08
     {
         static void Main(string[] args)
         {
-            var lines = File
-                .ReadAllLines(args[0]);
-
+            var lines = File.ReadAllLines(args[0]);
             var hits = new int[] { 2, 3, 4, 7 };
 
             var answerPart1 = 0;
             int answerPart2 = 0;
+            
             var start = DateTime.Now;
             foreach (var line in lines)
             {
@@ -102,12 +101,11 @@ namespace _08
                 }
 
                 IEnumerable<(char, char)> decodingTable = possibleDecodingTables
-                                    .Where(table =>
+                                    .First(table =>
                                         signalPattern
                                             .Select(pattern => new Digit(pattern, table))
                                             .All(digit => digit.IsValid)
-                                    )
-                                    .First();
+                                    );
 
                 int outputValue = int.Parse(string.Join("", outputValues.Select(sp => new Digit(sp, decodingTable).Value)));
                 answerPart2 += outputValue;
@@ -120,19 +118,16 @@ namespace _08
         private static IEnumerable<(char, char)> GenerateAllPossibleDecodingPairs(List<EncodedDigit> knownDigits)
         {
             List<(char, char)> doNotGenerateFurther = new List<(char, char)>();
-
             List<(char, char)> possiblePairs = new List<(char, char)>();
+
             foreach (var digit in knownDigits)
             {
                 var correctSegments = PossibleCorrectSegmentsForDigit(digit)
                                         .SelectMany(c => c)
                                         .Except(doNotGenerateFurther.Select(d => d.Item2))
                                         .ToArray();
-
                 var sigSegs = digit.SignalSegments.Except(doNotGenerateFurther.Select(cm => cm.Item1));
-
-                var allCombos = sigSegs
-                    .SelectMany(s => correctSegments.Select(cs => (s, cs)));
+                var allCombos = sigSegs.SelectMany(s => correctSegments.Select(cs => (s, cs)));
                     
                 possiblePairs.AddRange(allCombos);
 
