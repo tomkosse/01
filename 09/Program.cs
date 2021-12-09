@@ -30,7 +30,9 @@ namespace _09
     {
         static void Main(string[] args)
         {
-            var cellMatrix = GetCellMatrix(File.ReadAllLines(args[0]).Select(lines => lines.ToCharArray().Select(c => int.Parse(c.ToString())).ToArray()).ToArray());
+            var numbers = File.ReadAllLines(args[0]).Select(lines => lines.ToCharArray().Select(c => int.Parse(c.ToString())).ToArray()).ToArray();
+            var start = DateTime.Now;
+            var cellMatrix = GetCellMatrix(numbers);
 
             List<int> lowPoints = new List<int>();
             List<List<Cell>> basins = new List<List<Cell>>();
@@ -48,17 +50,14 @@ namespace _09
                     var basin = new List<Cell>();
                     while (allAdjecent.Count > 0)
                     {
-                        var adjecentCell = allAdjecent.First();
+                        var adjecentCell = allAdjecent[0];
                         if (!adjecentCell.InBasin)
                         {
                             basin.Add(adjecentCell);
                             adjecentCell.InBasin = true;
                             allAdjecent.AddRange(GetAdjecentValuesWithoutPeaks(cellMatrix, adjecentCell.Y, adjecentCell.X).Where(a => !a.InBasin));
                         }
-                        else
-                        {
-                            allAdjecent.Remove(adjecentCell);
-                        }
+                        allAdjecent.Remove(adjecentCell);
                     }
                     if(basin.Count > 0)
                     {
@@ -66,11 +65,15 @@ namespace _09
                     }
                 }
             }
-            System.Console.WriteLine("Part 1: " + lowPoints.Select(lp => lp + 1).Sum());
-            System.Console.WriteLine("Amount of basins: " + basins.Count);
             var largestBasinSizes = basins.Select(b => b.Count).OrderByDescending(b => b).Take(3).ToArray();
             int sizeOfThreeLargestBasinsMultiplied = largestBasinSizes[0] * largestBasinSizes[1] * largestBasinSizes[2];
+            int lowPointScore = lowPoints.Sum(lp => lp + 1);
+            var elapsed = (DateTime.Now - start).TotalMilliseconds;
+
+            System.Console.WriteLine("Part 1: " + lowPointScore);
+            System.Console.WriteLine("Amount of basins: " + basins.Count);
             System.Console.WriteLine("Size of three largest basins multiplied: " + sizeOfThreeLargestBasinsMultiplied);
+            System.Console.WriteLine("Elapsed: " + elapsed + "ms");
         }
 
         private static Cell[][] GetCellMatrix(int[][] numberMatrix)
