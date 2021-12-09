@@ -39,7 +39,6 @@ namespace _08
         public Digit(string input, IEnumerable<(char, char)> decodingTable)
         {
             var decoded = input
-                            .ToCharArray()
                             .Select(c => decodingTable.Where(combo => combo.Item1 == c).First().Item2)
                             .OrderBy(c => c)
                             .ToArray();
@@ -53,7 +52,6 @@ namespace _08
         public EncodedDigit(string signalSegments)
         {
             SignalSegments = signalSegments
-                                .ToCharArray()
                                 .OrderBy(c => c)
                                 .ToArray();
         }
@@ -82,7 +80,7 @@ namespace _08
             var start = DateTime.Now;
             foreach (var line in lines)
             {
-                var splitted = line.Split(" | ").ToArray();
+                var splitted = line.Split(" | ");
                 var signalPattern = splitted[0].Split(" ");
                 var outputValues = splitted[1].Split(" ");
                 answerPart1 += outputValues.Count(ov => hits.Contains(ov.Length));
