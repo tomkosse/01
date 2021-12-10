@@ -24,10 +24,7 @@ namespace _10
         {
             switch (closingCharacter)
             {
-                case ')': return 3;
-                case ']': return 57;
-                case '}': return 1197;
-                case '>': return 25137;
+                case ')': return 3; case ']': return 57; case '}': return 1197; case '>': return 25137;
                 default:
                     throw new ArgumentOutOfRangeException(closingCharacter.ToString());
             }
@@ -36,10 +33,7 @@ namespace _10
         {
             switch (closingCharacter)
             {
-                case ')': return 1;
-                case ']': return 2;
-                case '}': return 3;
-                case '>': return 4;
+                case ')': return 1; case ']': return 2; case '}': return 3; case '>': return 4;
                 default:
                     throw new ArgumentOutOfRangeException(closingCharacter.ToString());
             }
