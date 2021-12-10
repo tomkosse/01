@@ -41,7 +41,7 @@ namespace _10
                 case '}': return 3;
                 case '>': return 4;
                 default:
-                    throw new InvalidDataException(closingCharacter.ToString());
+                    throw new ArgumentOutOfRangeException(closingCharacter.ToString());
             }
         }
 
