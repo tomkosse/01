@@ -7,7 +7,6 @@ namespace _12
 {
     public class Node
     {
-
         public string Identifier { get; }
 
         public IList<Node> Neighbours { get; }
@@ -50,35 +49,35 @@ namespace _12
                 node2.Neighbours.Add(node1);
             }
 
-            var currentNode = nodes.Single(n => n.Identifier == "start");
+            var startNode = nodes.Single(n => n.Identifier == "start");
 
             var routeChains = new List<List<Node>>();
 
-            Visit(currentNode, routeChains, new List<Node>());
+            Visit(startNode, routeChains, new List<Node>());
             
             routeChains.ForEach(rc => System.Console.WriteLine(string.Join(",", rc.Select(r => r.Identifier))));
             System.Console.WriteLine($"Found {routeChains.Count} routes");
         }
 
-        private static void Visit(Node currentNode, List<List<Node>> routeChain, List<Node> visitedNodes)
+        private static void Visit(Node currentNode, List<List<Node>> routeChains, List<Node> currentChain)
         {
-            visitedNodes.Add(currentNode);
+            currentChain.Add(currentNode);
             if(currentNode.IsEndNode)
             {
-                routeChain.Add(visitedNodes);
+                routeChains.Add(currentChain);
                 return;
             }
 
             int maxSmallVisits = 2;
-            if(visitedNodes.Where(vn => !vn.IsBig).GroupBy(vn => vn.Identifier).Any(gr => gr.Count() > 1))
+            if(currentChain.Where(vn => !vn.IsBig).GroupBy(vn => vn.Identifier).Any(gr => gr.Count() > 1))
             {
                 maxSmallVisits = 1;
             }
             foreach (var n in currentNode.Neighbours)
             {
-                if((visitedNodes.Count(vn => vn == n) < maxSmallVisits || n.IsBig) && !n.IsStartNode)
+                if((currentChain.Count(vn => vn == n) < maxSmallVisits || n.IsBig) && !n.IsStartNode)
                 {
-                    Visit(n, routeChain, visitedNodes.ToList());
+                    Visit(n, routeChains, currentChain.ToList());
                 }
             }
         }
