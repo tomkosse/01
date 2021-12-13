@@ -32,19 +32,14 @@ namespace _13
             PrintDots(dots, maxX, maxY);
         }
 
-        private static IEnumerable<(int X, int Y)> DistinctDots(this IEnumerable<(int X, int Y)> dots)
-        {
-            return dots.GroupBy(dot => (dot.X, dot.Y)).Select(gr => gr.First()).ToArray();
-        }
-
         private static IEnumerable<(int X, int Y)> FoldHorizontally(this IEnumerable<(int X, int Y)> dots, int line)
         {
-            return dots.Select(dot => dot.X > line ? (line - (dot.X - line), dot.Y) : dot).DistinctDots();
+            return dots.Select(dot => dot.X > line ? (line - (dot.X - line), dot.Y) : dot).Distinct().ToArray();
         }
 
         private static IEnumerable<(int X, int Y)> FoldVertically(this IEnumerable<(int X, int Y)> dots, int line)
         {
-            return dots.Select(dot => dot.Y > line ? (dot.X, line - (dot.Y - line)) : dot).DistinctDots();
+            return dots.Select(dot => dot.Y > line ? (dot.X, line - (dot.Y - line)) : dot).Distinct().ToArray();
         }
 
         private static void PrintDots(IEnumerable<(int X, int Y)> dots, int maxX, int maxY)
