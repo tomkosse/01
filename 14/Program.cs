@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -9,53 +10,68 @@ namespace _14
     {
         static void Main(string[] args)
         {
-            var lines = File.ReadAllLines(args[0]).ToArray();
-            var start = DateTime.Now;
+            var lines = File.ReadAllLines(args[0]);
+            Stopwatch s = Stopwatch.StartNew();
 
             var template = lines[0];
-            var lookup = lines.Skip(2).Select(l => l.Split(" -> ")).ToDictionary(i => i[0], i => i[1][0]);
+            var highestCharacterValue = 0;
+            var lookup = new long[26, 26];
+            for (int i = 2; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                var char1 = line[0] - 'A';
+                highestCharacterValue = char1 > highestCharacterValue ? char1 : highestCharacterValue;
+                var char2 = line[1] - 'A';
+                var element = line[6] - 'A';
+                lookup[char1, char2] = element;
+            }
 
-            var pairCounts = new Dictionary<string, long>();
+            highestCharacterValue++;
+
+            var pairs = new long[highestCharacterValue, highestCharacterValue];
+            var countPerCharacter = new long[highestCharacterValue];
             for (int i = 0; i < template.Length - 1; i++)
             {
-                var pair = template[i].ToString() + template[i + 1];
-                pairCounts.Add(pair, 1);
+                var firstChar = template[i] - 'A';
+                var secondChar = template[i + 1] - 'A';
+                pairs[firstChar, secondChar]++;
+                countPerCharacter[firstChar]++;
             }
-
-            var countPerCharacter = new Dictionary<char, long>();
-            template.ToList().ForEach(c => countPerCharacter.EnterOrAdd(c, 1));
+            countPerCharacter[template[^1] - 'A']++;
 
             int maxSteps = 40; // 10 for part 1
-            for (int i = 1; i <= maxSteps; i++)
+            for (int step = 1; step <= maxSteps; step++)
             {
-                Dictionary<string, long> toInsert = new Dictionary<string, long>();
-                foreach (var pair in pairCounts.Keys.ToList())
+                var tempPairs = new long[highestCharacterValue, highestCharacterValue];
+                for (int i = 0; i < highestCharacterValue; i++)
                 {
-                    toInsert.EnterOrAdd(pair[0].ToString() + lookup[pair].ToString(), pairCounts[pair]);
-                    toInsert.EnterOrAdd(lookup[pair].ToString() + pair[1].ToString(), pairCounts[pair]);
-                    countPerCharacter.EnterOrAdd(lookup[pair], pairCounts[pair]);
-                    pairCounts.Remove(pair);
-                }
-                foreach (var ti in toInsert)
-                {
-                    pairCounts.EnterOrAdd(ti.Key, ti.Value);
-                }
-            }
-            var ordered = countPerCharacter.OrderBy(pc => pc.Value).ToArray();
-            var score = ordered[^1].Value - ordered[0].Value;
-            System.Console.WriteLine($"Score: {score} - elapsed: {(DateTime.Now - start).TotalMilliseconds}");
-        }
+                    for (int j = 0; j < highestCharacterValue; j++)
+                    {
+                        var count = pairs[i, j];
+                        if (count > 0)
+                        {
+                            tempPairs[i, lookup[i, j]] += count;
+                            tempPairs[lookup[i, j], j] += count;
+                            countPerCharacter[lookup[i, j]] += count;
 
-        public static void EnterOrAdd<K>(this Dictionary<K, long> dict, K key, long value)
-        {
-            if (!dict.ContainsKey(key))
-            {
-                dict.Add(key, value);
+                            pairs[i, j] = 0;
+                        }
+                    }
+                }
+                pairs = tempPairs;
             }
-            else
+
+            var lowest = long.MaxValue;
+            var highest = long.MinValue;
+            for (int i = 0; i < highestCharacterValue; i++)
             {
-                dict[key] = dict[key] + value;
+                var count = countPerCharacter[i];
+                lowest = count < lowest && count > 0 ? count : lowest;
+                highest = count > highest ? count : highest;
             }
+            var score = highest - lowest;
+
+            System.Console.WriteLine($"Score: {score} - elapsed: {s.ElapsedMilliseconds}ms which is {s.ElapsedTicks} ticks");
         }
     }
 }
