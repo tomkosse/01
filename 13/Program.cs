@@ -24,10 +24,8 @@ namespace _13
                     dots = dots.FoldVertically(line);
                 }
             }
-            
-            var maxX = dots.Max(d => d.X);
-            var maxY = dots.Max(d => d.Y);
-            PrintDots(dots, maxX, maxY);
+
+            PrintDots(dots, dots.Max(d => d.X), dots.Max(d => d.Y));
         }
 
         private static IEnumerable<(int X, int Y)> FoldHorizontally(this IEnumerable<(int X, int Y)> dots, int line)
