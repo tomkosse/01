@@ -10,19 +10,13 @@ namespace _15
     public class Node
     {
         public int RiskLevel { get; }
-        public int DistanceToEnd
-        {
-            get;
-            set;
-        }
         public int X { get; }
         public int Y { get; }
-
-        public int LowestFoundRisk = int.MaxValue;
-
+        public int DistanceToEnd { get; set; }
         public IList<Node> Neighbours { get; set; }
         public bool IsEndNode { get; set; }
-        public bool IsStartNode { get; set; }
+        
+        public int LowestFoundRisk = int.MaxValue;
 
         public Node(int x, int y, int riskLevel)
         {
@@ -44,16 +38,8 @@ namespace _15
             var lines = File.ReadAllLines(args[0]);
             var sw = Stopwatch.StartNew();
 
-            var numbers = lines
-                .Select(
-                        line => line
-                            .ToCharArray()
-                            .Select(c => int.Parse(c.ToString()))
-                            .ToArray()
-                        ).ToArray();
-
-            var nodes = CreateNodeMatrix(numbers, 5, 5);
-            //var nodes = CreateNodeMatrix(numbers, 1, 1);
+            var numbers = lines.Select(line => line.ToCharArray().Select(c => int.Parse(c.ToString())).ToArray()).ToArray();
+            var nodes = CreateNodeMatrix(numbers, 5);
 
             var startNode = nodes[0][0];
             int outcome = Visit(startNode);
@@ -61,21 +47,19 @@ namespace _15
             System.Console.WriteLine($"Answer: {outcome - startNode.RiskLevel} in {sw.ElapsedMilliseconds}ms");
         }
 
-        private static Node[][] CreateNodeMatrix(int[][] numberMatrix, int xMultiplier, int yMultiplier)
+        private static Node[][] CreateNodeMatrix(int[][] numberMatrix, int multiplier)
         {
-            Node[][] nodes = new Node[numberMatrix.Length * yMultiplier][];
-
+            Node[][] nodes = new Node[numberMatrix.Length * multiplier][];
             for (int y = 0; y < numberMatrix.Length; y++)
             {
-                for (int yMulti = 0; yMulti < yMultiplier; yMulti++)
-                {
-                    int newY = y + (yMulti * numberMatrix.Length);
-                    
+                for (int yMulti = 0; yMulti < multiplier; yMulti++)
+                {           
                     var row = numberMatrix[y];
-                    nodes[newY] = new Node[row.Length * xMultiplier];
+                    int newY = y + (yMulti * numberMatrix.Length);
+                    nodes[newY] = new Node[row.Length * multiplier];
                     for (int x = 0; x < row.Length; x++)
                     {
-                        for (int xMulti = 0; xMulti < xMultiplier; xMulti++)
+                        for (int xMulti = 0; xMulti < multiplier; xMulti++)
                         {
                             int newX = x + (xMulti * row.Length);
                             var riskLevel = numberMatrix[y][x] + xMulti + yMulti;
@@ -86,7 +70,6 @@ namespace _15
                 }
             }
 
-            nodes.First().First().IsStartNode = true;
             var endNode = nodes.Last().Last();
             endNode.IsEndNode = true;
             foreach (var node in nodes.SelectMany(o => o))
@@ -101,7 +84,6 @@ namespace _15
         private static int Visit(Node currentNode, int currentSum = 0, int lowestRiskLevelFound = int.MaxValue)
         {
             int currentTotalRisk = currentSum + currentNode.RiskLevel;
-
             if (currentNode.IsEndNode)
             {
                 return currentTotalRisk;
@@ -125,10 +107,9 @@ namespace _15
             }
         }
 
-        private static Node[] GetAdjecentNodes(Node[][] nodeMatrix, Node node)
+        private static IEnumerable<Node> GetAdjecentNodes(Node[][] nodeMatrix, Node node)
         {
             List<Node> nodes = new List<Node>();
-            var row = nodeMatrix[node.Y];
             if (node.Y > 0)
             {
                 nodes.Add(nodeMatrix[node.Y - 1][node.X]);
@@ -141,11 +122,11 @@ namespace _15
             {
                 nodes.Add(nodeMatrix[node.Y][node.X - 1]);
             }
-            if (node.X < row.Length - 1)
+            if (node.X < nodeMatrix[node.Y].Length - 1)
             {
                 nodes.Add(nodeMatrix[node.Y][node.X + 1]);
             }
-            return nodes.ToArray();
+            return nodes;
         }
     }
 }
