@@ -71,10 +71,10 @@ namespace _16
             var hexLine = File.ReadAllLines(args[0])[0];
             var bitstring = string.Join("", Convert.FromHexString(hexLine).SelectMany(b => new[] { Convert.ToString((byte)(b >> 4 & 0xF), 2).PadLeft(4, '0'), Convert.ToString((byte)(b & 0xF), 2).PadLeft(4, '0') }));
 
-            var rootPackage = ParsePackets(bitstring, out int _);
+            var rootPacket = ParsePackets(bitstring, out int _);
 
-            System.Console.WriteLine("Part 1: " + rootPackage.GetVersionSum());
-            System.Console.WriteLine("Part 2: " + rootPackage.GetValue());
+            System.Console.WriteLine("Part 1: " + rootPacket.GetVersionSum());
+            System.Console.WriteLine("Part 2: " + rootPacket.GetValue());
         }
 
         private static Packet ParsePackets(string inputString, out int charsRead)
