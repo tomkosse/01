@@ -22,14 +22,14 @@ namespace _16
     {
         static Func<long[], long>[] operations = new Func<long[], long>[]
         {
-            (intArr) => intArr.Sum(),
-            (intArr) => intArr.Aggregate((long)1, (acc, el) => acc * el),
-            (intArr) => intArr.Min(),
-            (intArr) => intArr.Max(),
-            (intArr) => throw new Exception("RESERVED"),
-            (intArr) => intArr[0] > intArr[1] ? 1 : 0,
-            (intArr) => intArr[0] < intArr[1] ? 1 : 0,
-            (intArr) => intArr[0] == intArr[1] ? 1 : 0,
+            (longArr) => longArr.Sum(),
+            (longArr) => longArr.Aggregate((long)1, (acc, el) => acc * el),
+            (longArr) => longArr.Min(),
+            (longArr) => longArr.Max(),
+            (longArr) => throw new Exception("RESERVED"),
+            (longArr) => longArr[0] > longArr[1] ? 1 : 0,
+            (longArr) => longArr[0] < longArr[1] ? 1 : 0,
+            (longArr) => longArr[0] == longArr[1] ? 1 : 0,
         };
         public Packet[] SubPackets { get; }
         public Func<long[], long> Operation { get { return operations[Type]; } }
@@ -58,16 +58,13 @@ namespace _16
     }
     public class Program
     {
-
         static void Main(string[] args)
         {
             var hexLine = File.ReadAllLines(args[0])[0];
             var bytes = Convert.FromHexString(hexLine).SelectMany(b => new[] { Convert.ToString((byte)(b >> 4 & 0xF), 2).PadLeft(4, '0'), Convert.ToString((byte)(b & 0xF), 2).PadLeft(4, '0') });
-            var completeString = string.Join("", bytes);
-            var rootPackage = ParsePackets(completeString, out int _);
+            var rootPackage = ParsePackets(string.Join("", bytes), out int _);
 
-            var value = rootPackage.GetValue();
-            System.Console.WriteLine(value);
+            System.Console.WriteLine(rootPackage.GetValue());
         }
 
         private static Packet ParsePackets(string inputString, out int charsRead)
@@ -94,8 +91,7 @@ namespace _16
                     int localCharactersUsed = 0;
                     while (localCharactersUsed < totalLength)
                     {
-                        var packet = ParsePackets(remainder.Substring(localCharactersUsed, totalLength - localCharactersUsed), out int localCharsRead);
-                        subPackets.Add(packet);
+                        subPackets.Add(ParsePackets(remainder.Substring(localCharactersUsed, totalLength - localCharactersUsed), out int localCharsRead));
                         localCharactersUsed += localCharsRead;
                     }
                     charsRead = localCharactersUsed + 1 + 15 + 6;
@@ -107,8 +103,7 @@ namespace _16
                     int localCharactersUsed = 0;
                     for (int i = 0; i < numberOfSubpackets; i++)
                     {
-                        var packet = ParsePackets(remainder.Substring(localCharactersUsed), out int localCharsRead);
-                        subPackets.Add(packet);
+                        subPackets.Add(ParsePackets(remainder.Substring(localCharactersUsed), out int localCharsRead));
                         localCharactersUsed += localCharsRead;
                     }
                     charsRead = localCharactersUsed + 1 + 11 + 6;
@@ -118,10 +113,9 @@ namespace _16
             }
         }
 
-        private static LiteralPacket CreateLiteralPacket(int version, int type, string payload, out int charsRead)
+        private static LiteralPacket CreateLiteralPacket(int version, int type, string remainder, out int charsRead)
         {
             int read = 0;
-            var remainder = payload;
             var unpackedPayload = "";
             bool keepReading = true;
             while (keepReading)
@@ -132,8 +126,7 @@ namespace _16
                 read += 5;
             }
             charsRead = read;
-            var dec = Convert.ToInt64(unpackedPayload, 2);
-            return new LiteralPacket(version, type, dec);
+            return new LiteralPacket(version, type, Convert.ToInt64(unpackedPayload, 2));
         }
     }
 }
