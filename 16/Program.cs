@@ -15,7 +15,8 @@ namespace _16
             Version = version;
             Type = type;            
         }
-        public abstract long GetValue();
+        public abstract long GetValue();        
+        public abstract int GetVersionSum();
     }
 
     public class OperatorPacket : Packet
@@ -42,6 +43,10 @@ namespace _16
         {
             return Operation(SubPackets.Select(sp => sp.GetValue()).ToArray());
         }
+        public override int GetVersionSum()
+        {
+            return SubPackets.Sum(sp => sp.GetVersionSum()) + Version;
+        }
     }
 
     public class LiteralPacket : Packet
@@ -55,6 +60,10 @@ namespace _16
         {
             return value;
         }
+        public override int GetVersionSum()
+        {
+            return Version;
+        }
     }
     public class Program
     {
@@ -64,7 +73,8 @@ namespace _16
             var bytes = Convert.FromHexString(hexLine).SelectMany(b => new[] { Convert.ToString((byte)(b >> 4 & 0xF), 2).PadLeft(4, '0'), Convert.ToString((byte)(b & 0xF), 2).PadLeft(4, '0') });
             var rootPackage = ParsePackets(string.Join("", bytes), out int _);
 
-            System.Console.WriteLine(rootPackage.GetValue());
+            System.Console.WriteLine("Part 1: " + rootPackage.GetVersionSum());
+            System.Console.WriteLine("Part 2: " + rootPackage.GetValue());
         }
 
         private static Packet ParsePackets(string inputString, out int charsRead)
