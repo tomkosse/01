@@ -33,7 +33,6 @@ namespace _16
             (longArr) => longArr[0] == longArr[1] ? 1 : 0,
         };
         public Packet[] SubPackets { get; }
-        public Func<long[], long> Operation { get { return operations[Type]; } }
         public OperatorPacket(int version, int type, Packet[] subPackets) : base(version, type)
         {
             this.SubPackets = subPackets;
@@ -41,7 +40,7 @@ namespace _16
 
         public override long GetValue()
         {
-            return Operation(SubPackets.Select(sp => sp.GetValue()).ToArray());
+            return operations[Type](SubPackets.Select(sp => sp.GetValue()).ToArray());
         }
         public override int GetVersionSum()
         {
@@ -71,7 +70,7 @@ namespace _16
         {
             var hexLine = File.ReadAllLines(args[0])[0];
             var bitstring = string.Join("", Convert.FromHexString(hexLine).SelectMany(b => new[] { Convert.ToString((byte)(b >> 4 & 0xF), 2).PadLeft(4, '0'), Convert.ToString((byte)(b & 0xF), 2).PadLeft(4, '0') }));
-            
+
             var rootPackage = ParsePackets(bitstring, out int _);
 
             System.Console.WriteLine("Part 1: " + rootPackage.GetVersionSum());
