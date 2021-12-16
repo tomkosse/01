@@ -9,13 +9,13 @@ namespace _16
     {
         public int Version { get; }
         public int Type { get; }
-        public abstract long GetValue();
 
         public Packet(int version, int type)
         {
             Version = version;
             Type = type;            
         }
+        public abstract long GetValue();
     }
 
     public class OperatorPacket : Packet
