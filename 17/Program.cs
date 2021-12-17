@@ -12,11 +12,11 @@ namespace _17
         {
             var line = File.ReadAllLines(args[0])[0];
             var sw = Stopwatch.StartNew();
-            var coordSpace = line.Split(": ")[1].Split(", ").Select(str => str.Substring(2).Split("..").Select(int.Parse).ToArray()).ToArray();
-            var parseTime = sw.ElapsedMilliseconds;
-            sw.Restart();
-            var xRange = coordSpace[0];
-            var yRange = coordSpace[1];
+
+            int[] numbers = UglyParse(line.ToCharArray());
+
+            var xRange = new int[] { numbers[0], numbers[1] };
+            var yRange = new int[] { numbers[2], numbers[3] };
 
             var maxSettings = (maxHeight: int.MinValue, xVel: 0, yVel: 0);
             int amountOfValidVelocities = 0;
@@ -25,13 +25,11 @@ namespace _17
 
             // The x distance travelled is (x^2 / 2) + 1 so the minimum x required to reach the lower bound can be determined
             int lowerXBound = (int)Math.Sqrt(xRange[0] * 2 - 1);
-            
-            int loops = 0;
+
             for (int y = lowerYBound; y < higherYBound; y++)
             {
                 for (int x = lowerXBound; x <= xRange[1]; x++)
                 {
-                    loops++;
                     int highestHeight = int.MinValue;
                     var probe = (X: 0, Y: 0);
                     var velocity = (xVel: x, yVel: y);
@@ -56,18 +54,59 @@ namespace _17
                             amountOfValidVelocities++;
                             break;
                         }
-                    }                    
-                    if(probe.X > xRange[1] && probe.Y > Math.Max(yRange[0], yRange[1]))
+                    }
+                    if (probe.X > xRange[1] && probe.Y > Math.Max(yRange[0], yRange[1]))
                     {
                         break; // Overshoot. Een nog hogere X gaat niet meer helpen.
                     }
                 }
             }
             var time = sw.ElapsedMilliseconds;
+            var ticks = sw.ElapsedTicks;
             System.Console.WriteLine($"Valid velocity count: {amountOfValidVelocities}");
             System.Console.WriteLine($"Reached {maxSettings.maxHeight} with velocity {maxSettings.xVel},{maxSettings.yVel}");
-            System.Console.WriteLine($"Parsed in {parseTime}ms calculated in {time}ms");
-            System.Console.WriteLine(loops);
+            System.Console.WriteLine($"Done in {time}ms ({ticks} ticks)");
+        }
+
+        private static int[] UglyParse(char[] chars)
+        {
+            int[] numbers = new int[4];
+            int idx = 0;
+            bool skipping = false;
+            bool isNegative = false;
+
+            for (int i = 15; i < chars.Length; i++)
+            {
+                var c = chars[i];
+                if (Char.IsNumber(c))
+                {
+                    skipping = false;
+                    numbers[idx] = numbers[idx] * 10 + (int)Char.GetNumericValue(c);
+                }
+                else if (c == '-')
+                {
+                    isNegative = true;
+                }
+                else
+                {
+                    if (!skipping)
+                    {
+                        if (isNegative)
+                        {
+                            numbers[idx] *= -1;
+                        }
+                        idx++;
+                    }
+                    skipping = true;
+                    isNegative = false;
+                }
+            }
+            if (isNegative)
+            {
+                numbers[idx] *= -1;
+            }
+
+            return numbers;
         }
 
         public static bool IsInRange(int a, int min, int max) => a >= min && a <= max;
