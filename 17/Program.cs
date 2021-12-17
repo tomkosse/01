@@ -25,11 +25,11 @@ namespace _17
 
             // The x distance travelled is (x^2 / 2) + 1 so the minimum x required to reach the lower bound can be determined
             int lowerXBound = (int)Math.Sqrt(xRange[0] * 2 - 1);
-                        
+            
             int loops = 0;
             for (int y = lowerYBound; y < higherYBound; y++)
             {
-                for (int x = lowerXBound; x <= xRange[0]; x++)
+                for (int x = lowerXBound; x <= xRange[1]; x++)
                 {
                     loops++;
                     int highestHeight = int.MinValue;
