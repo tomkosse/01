@@ -13,16 +13,22 @@ namespace _17
             var line = File.ReadAllLines(args[0])[0];
             var sw = Stopwatch.StartNew();
             var coordSpace = line.Split(": ")[1].Split(", ").Select(str => str.Substring(2).Split("..").Select(int.Parse).ToArray()).ToArray();
+            var parseTime = sw.ElapsedMilliseconds;
+            sw.Restart();
             var xRange = coordSpace[0];
             var yRange = coordSpace[1];
 
             var maxSettings = (maxHeight: int.MinValue, xVel: 0, yVel: 0);
             int amountOfValidVelocities = 0;
-            var lowerYBound = -1 * (Math.Abs(yRange[0]));
+            var lowerYBound = -1 * (Math.Abs(yRange[0])); // A y lower than the lowest Y value would instantly undershoot
             var higherYBound = Math.Abs(yRange[0]);
-            for (int x = 1; x <= xRange[1]; x++)
+
+            // The x distance travelled is (x^2 / 2) + 1 so the minimum x required to reach the lower bound can be determined
+            int lowerXBound = (int)Math.Sqrt(xRange[0] * 2 - 1);
+
+            for (int y = lowerYBound; y < higherYBound; y++)
             {
-                for (int y = lowerYBound; y < higherYBound; y++)
+                for (int x = lowerXBound; x <= xRange[1]; x++)
                 {
                     int highestHeight = int.MinValue;
                     var probe = (X: 0, Y: 0);
@@ -52,9 +58,9 @@ namespace _17
                 }
             }
             var time = sw.ElapsedMilliseconds;
-            System.Console.WriteLine(amountOfValidVelocities);
+            System.Console.WriteLine($"Valid velocity count: {amountOfValidVelocities}");
             System.Console.WriteLine($"Reached {maxSettings.maxHeight} with velocity {maxSettings.xVel},{maxSettings.yVel}");
-            System.Console.WriteLine("Done in " + time + "ms");
+            System.Console.WriteLine($"Parsed in {parseTime}ms calculated in {time}ms");
         }
 
         public static bool IsInRange(int a, int min, int max) => a >= min && a <= max;
