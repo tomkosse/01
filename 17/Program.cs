@@ -25,11 +25,13 @@ namespace _17
 
             // The x distance travelled is (x^2 / 2) + 1 so the minimum x required to reach the lower bound can be determined
             int lowerXBound = (int)Math.Sqrt(xRange[0] * 2 - 1);
-
+                        
+            int loops = 0;
             for (int y = lowerYBound; y < higherYBound; y++)
             {
-                for (int x = lowerXBound; x <= xRange[1]; x++)
+                for (int x = lowerXBound; x <= xRange[0]; x++)
                 {
+                    loops++;
                     int highestHeight = int.MinValue;
                     var probe = (X: 0, Y: 0);
                     var velocity = (xVel: x, yVel: y);
@@ -54,6 +56,10 @@ namespace _17
                             amountOfValidVelocities++;
                             break;
                         }
+                    }                    
+                    if(probe.X > xRange[1] && probe.Y > Math.Max(yRange[0], yRange[1]))
+                    {
+                        break; // Overshoot. Een nog hogere X gaat niet meer helpen.
                     }
                 }
             }
@@ -61,6 +67,7 @@ namespace _17
             System.Console.WriteLine($"Valid velocity count: {amountOfValidVelocities}");
             System.Console.WriteLine($"Reached {maxSettings.maxHeight} with velocity {maxSettings.xVel},{maxSettings.yVel}");
             System.Console.WriteLine($"Parsed in {parseTime}ms calculated in {time}ms");
+            System.Console.WriteLine(loops);
         }
 
         public static bool IsInRange(int a, int min, int max) => a >= min && a <= max;
