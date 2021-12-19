@@ -34,32 +34,24 @@ namespace _19
 
         private static void DeduceMap(List<(int scanner, List<(int x, int y, int z)> coords)> reports)
         {
-            var locations = new (int x, int y, int z)[reports.Count];
+            var locations = new Nullable<(int x, int y, int z)>[reports.Count];
             var baseReport = reports[0];
             locations[0] = (0, 0, 0);
             for (int i = 1; i < reports.Count; i++)
             {
                 var scannerLocation = MakeRelativeToSameBeacon(baseReport, reports[i]);
+                locations[i] = scannerLocation;
                 if (scannerLocation.HasValue)
                 {
                     System.Console.WriteLine("Found " + i + " at ");
-                    locations[i] = scannerLocation.Value;
                     PrintCoord(scannerLocation.Value);
                 }
             }
-            // foreach(var report in flippedReports)
-            // {
-            //     System.Console.WriteLine("report ");
-            //     foreach(var coord in report)
-            //     {
-            //         System.Console.WriteLine("X: " + coord.x + " Y: " + coord.y + " Z: " + coord.z);
-            //     }
-            // }
         }
 
         private static Nullable<(int x, int y, int z)> MakeRelativeToSameBeacon((int scanner, List<(int x, int y, int z)> coords) firstReport, (int scanner, List<(int x, int y, int z)> coords) otherReport)
         {
-            var requiredMatches = firstReport.coords.Any(fr => fr.z != 0) ? 11 : 1;
+            var requiredMatches = firstReport.coords.Any(fr => fr.z != 0) ? 11 : 2;
             for (int j = 0; j < firstReport.coords.Count; j++)
             {
                 List<(int x, int y, int z)> list = new List<(int x, int y, int z)>();
@@ -70,29 +62,57 @@ namespace _19
                     list.Add(coord);
                 }
 
+                if(j ==0)
+                {
+                    list.ForEach(PrintCoord);
+                }
+                System.Console.WriteLine("-");
+
                 // All beacons in the first report are now relative to a beacon. Let's see if we can find the same beacon in another report
                 for (int i = 0; i < otherReport.coords.Count; i++)
                 {
                     var fb = otherReport.coords[i];
                     var otherCoords = otherReport.coords.Except(new[] { fb });
 
-                    List<(int x, int y, int z)> list2 = new List<(int x, int y, int z)>();
+                    List<(int perspectiveId, int x, int y, int z)> list2 = new List<(int perspectiveId, int x, int y, int z)>();
                     foreach (var otherBeacon in otherCoords)
                     {
-                        var possibleCoord = GeneratePerspectives(GetRelativeCoordinate(fb, otherBeacon));
-                        list2.AddRange(possibleCoord);
+                        var relCoord = GetRelativeCoordinate(fb, otherBeacon);
+                        var possibleCoord = GeneratePerspectives(relCoord);
+                        for(int perspectiveId = 0; perspectiveId < possibleCoord.Length; perspectiveId++)
+                        {
+                            list2.Add((perspectiveId, possibleCoord[perspectiveId].x, possibleCoord[perspectiveId].y, possibleCoord[perspectiveId].z));
+                        }
                     }
 
-                    var matches = list.Intersect(list2);
-
+                    var matches = Intersect(list, list2);
+                    
                     if (matches.Count() >= requiredMatches)
                     {
-                        return GetRelativeCoordinate(fb, referenceBeacon);
+                        var perspectiveId = matches.First().perspectiveId;
+                        var possibleCoord = GeneratePerspectives(fb)[perspectiveId];
+                        return GetRelativeCoordinate(possibleCoord, referenceBeacon);
                     }
                 }
             }
             return null;
         }
+        
+        private static IEnumerable<(int perspectiveId, int x, int y, int z)> Intersect(List<(int x, int y, int z)> list, List<(int perspectiveId, int x, int y, int z)> list2)
+        {
+            foreach(var i in list2)
+            {
+                foreach(var j in list)
+                {
+                    if(j.x == i.x && j.y == i.y && j.z == i.z)
+                    {
+                        yield return i;
+                    }
+                }
+            }
+
+        }
+
         private static void PrintCoord((int x, int y, int z) coord)
         {
             System.Console.WriteLine("X: " + coord.x + " Y: " + coord.y + " Z: " + coord.z);
@@ -107,12 +127,13 @@ namespace _19
         {
             return new (int x, int y, int z)[]
             {
-                (x: coord.x, y: coord.y, z: coord.z),
+                (x: coord.x * -1, y: coord.y, z: coord.z * -1),
                 (x: coord.x * -1, y: coord.y, z: coord.z),
+
+                (x: coord.x, y: coord.y, z: coord.z),
                 (x: coord.x, y: coord.y * -1, z: coord.z),
                 (x: coord.x, y: coord.y, z: coord.z * -1),
                 (x: coord.x * -1, y: coord.y * -1, z: coord.z),
-                (x: coord.x * -1, y: coord.y, z: coord.z * -1),
                 (x: coord.x, y: coord.y * -1, z: coord.z * -1),
                 (x: coord.x * -1, y: coord.y * -1, z: coord.z * -1),
 
