@@ -30,16 +30,12 @@ namespace _19
             }
 
             var beacons = DeduceMap(reports);
-            //beacons.OrderBy(b => b.x).ThenBy(b => b.y).ThenBy(b => b.z).ToList().ForEach(PrintCoord);
-            System.Console.WriteLine(beacons.Count());
+            System.Console.WriteLine("Part 1: " + beacons.Count());
         }
 
         private static IEnumerable<(int x, int y, int z)> DeduceMap(List<List<(int x, int y, int z)>> reports)
         {
             var allReports = reports.ToList();
-
-            List<(int x, int y, int z)> uniqueBeacons = new List<(int x, int y, int z)>();
-            uniqueBeacons.AddRange(reports[0]);
 
             var scannerLocations = new Nullable<(int x, int y, int z)>[allReports.Count];
             scannerLocations[0] = (0, 0, 0);
@@ -54,27 +50,32 @@ namespace _19
                             var absoluteScannerLocation = DetermineScannerLocation(allReports[i], allReports[j]);
                             if (absoluteScannerLocation.HasValue)
                             {
-                                System.Console.WriteLine("Found " + j + " by comparing to " + i + " at ");
-                                PrintCoord(absoluteScannerLocation.Value.coord);
-
-                                var toSameTransformation =  allReports[j].Select(c => GetTransformations(c)[absoluteScannerLocation.Value.transformationId]).ToList();
+                                var toSameTransformation = allReports[j].Select(c => GetTransformations(c)[absoluteScannerLocation.Value.transformationId]).ToList();
 
                                 var absoluted = toSameTransformation.Select(c => GetAbsoluteCoordinate(absoluteScannerLocation.Value.coord, c)).ToList();
-                                
+
                                 allReports[j] = absoluted;
                                 scannerLocations[j] = absoluteScannerLocation.Value.coord;
-
-                                var notMatched = absoluted.Except(uniqueBeacons);
-                                System.Console.WriteLine("new beacons: " + notMatched.Count());
-                                uniqueBeacons.AddRange(notMatched);
-                                System.Console.WriteLine("Total beacons: " + uniqueBeacons.Count());
                             }
                         }
                     }
                 }
             }
 
-            System.Console.WriteLine(uniqueBeacons.Count);
+            var maxDistance = int.MinValue;
+            foreach (var scannerA in scannerLocations)
+            {
+                foreach (var scannerB in scannerLocations)
+                {
+                    var dist = GetRelativeCoordinate(scannerA.Value, scannerB.Value);
+                    var sum = Math.Abs(dist.x) + Math.Abs(dist.y) + Math.Abs(dist.z);
+                    if(sum > maxDistance)
+                    {
+                        maxDistance = sum;
+                    }
+                }
+            }
+            System.Console.WriteLine("Part 2: " + maxDistance);
 
             return allReports.SelectMany(ar => ar).Distinct();
         }
@@ -101,7 +102,7 @@ namespace _19
                         {
                             if (list.Contains((possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z)))
                             {
-                                list2.Add((transformationId, possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z));                                
+                                list2.Add((transformationId, possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z));
                                 if (list2.Count() >= requiredMatches)
                                 {
                                     return (transformationId, GetRelativeCoordinate(GetTransformations(fb)[transformationId], referenceBeacon));
@@ -133,54 +134,32 @@ namespace _19
         {
             return new (int x, int y, int z)[]
             {
-                (x: coord.x * -1, y: coord.y, z: coord.z * -1),
-                (x: coord.x, y: coord.y, z: coord.z),
-                (x: coord.x * -1, y: coord.y, z: coord.z),
-                (x: coord.x, y: coord.y * -1, z: coord.z),
                 (x: coord.x, y: coord.y, z: coord.z * -1),
-                (x: coord.x * -1, y: coord.y * -1, z: coord.z),
-                (x: coord.x, y: coord.y * -1, z: coord.z * -1),
-                (x: coord.x * -1, y: coord.y * -1, z: coord.z * -1),
-                (x: coord.x, y: coord.z, z: coord.y),
-                (x: coord.x * -1, y: coord.z, z: coord.y),
-                (x: coord.x, y: coord.z * -1, z: coord.y),
                 (x: coord.x, y: coord.z, z: coord.y * -1),
-                (x: coord.x * -1, y: coord.z * -1, z: coord.y),
-                (x: coord.x * -1, y: coord.z, z: coord.y * -1),
-                (x: coord.x, y: coord.z * -1, z: coord.y * -1),
-                (x: coord.x * -1, y: coord.z * -1, z: coord.y * -1),
-                (x: coord.z, y: coord.x, z: coord.y),
-                (x: coord.z * -1, y: coord.x, z: coord.y),
-                (x: coord.z, y: coord.x * -1, z: coord.y),
-                (x: coord.z, y: coord.x, z: coord.y * -1),
-                (x: coord.z * -1, y: coord.x * -1, z: coord.y),
-                (x: coord.z * -1, y: coord.x, z: coord.y * -1),
-                (x: coord.z, y: coord.x * -1, z: coord.y * -1),
-                (x: coord.z * -1, y: coord.x * -1, z: coord.y * -1),
-                (x: coord.z, y: coord.y, z: coord.x),
-                (x: coord.z * -1, y: coord.y, z: coord.x),
-                (x: coord.z, y: coord.y * -1, z: coord.x),
-                (x: coord.z, y: coord.y, z: coord.x * -1),
-                (x: coord.z * -1, y: coord.y * -1, z: coord.x),
-                (x: coord.z * -1, y: coord.y, z: coord.x * -1),
-                (x: coord.z, y: coord.y * -1, z: coord.x * -1),
-                (x: coord.z * -1, y: coord.y * -1, z: coord.x * -1),
-                (x: coord.y, y: coord.z, z: coord.x),
-                (x: coord.y * -1, y: coord.z, z: coord.x),
-                (x: coord.y, y: coord.z * -1, z: coord.x),
-                (x: coord.y, y: coord.z, z: coord.x * -1),
-                (x: coord.y * -1, y: coord.z * -1, z: coord.x),
-                (x: coord.y, y: coord.z * -1, z: coord.x * -1),
-                (x: coord.y * -1, y: coord.z, z: coord.x * -1),
-                (x: coord.y * -1, y: coord.z * -1, z: coord.x * -1),
-                (x: coord.y, y: coord.x, z: coord.z),
-                (x: coord.y * -1, y: coord.x, z: coord.z),
-                (x: coord.y, y: coord.x * -1, z: coord.z),
+                (x: coord.x, y: coord.y * -1, z: coord.z * -1),
+                (x: coord.x, y: coord.z * -1, z: coord.y),
                 (x: coord.y, y: coord.x, z: coord.z * -1),
-                (x: coord.y * -1, y: coord.x * -1, z: coord.z),
-                (x: coord.y, y: coord.x * -1, z: coord.z * -1),
-                (x: coord.y * -1, y: coord.x, z: coord.z * -1),
+                (x: coord.y, y: coord.z, z: coord.x),
+                (x: coord.y, y: coord.x * -1, z: coord.z),
+                (x: coord.y, y: coord.z * -1, z: coord.x * -1),
+                (x: coord.z, y: coord.x, z: coord.y),
+                (x: coord.z, y: coord.y, z: coord.x * -1),
+                (x: coord.z, y: coord.x * -1, z: coord.y * -1),
+                (x: coord.z, y: coord.y * -1, z: coord.x),
+                (x: coord.x * -1, y: coord.y, z: coord.z * -1),
+                (x: coord.x * -1, y: coord.z, z: coord.y),
+                (x: coord.x * -1, y: coord.y * -1, z: coord.z),
+                (x: coord.x * -1, y: coord.z * -1, z: coord.y * -1),
+                (x: coord.y * -1, y: coord.x, z: coord.z),
+                (x: coord.y * -1, y: coord.z, z: coord.x * -1),
                 (x: coord.y * -1, y: coord.x * -1, z: coord.z * -1),
+                (x: coord.y * -1, y: coord.z * -1, z: coord.x),
+                (x: coord.z * -1, y: coord.x, z: coord.y * -1),
+                (x: coord.z * -1, y: coord.y, z: coord.x),
+                (x: coord.z * -1, y: coord.x * -1, z: coord.y),
+                (x: coord.z * -1, y: coord.y * -1, z: coord.x * -1),
+
+                (x: coord.x, y: coord.y, z: coord.z),
             };
         }
 
