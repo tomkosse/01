@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -7,15 +8,17 @@ namespace _19
 {
     class Program
     {
+        private static int _maxDistance;
+
         static void Main(string[] args)
         {
             var input = File.ReadAllLines(args[0]);
-
+            var sw = Stopwatch.StartNew();
             List<List<(int x, int y, int z)>> reports = new List<List<(int x, int y, int z)>>();
             var inputQueue = new Queue<string>(input);
             while (inputQueue.Any())
             {
-                var scannerId = int.Parse(inputQueue.Dequeue().Substring(12).Replace("-", string.Empty).Trim());
+                inputQueue.Dequeue(); // scanner header
                 var list = new List<(int x, int y, int z)>();
                 while (inputQueue.Any())
                 {
@@ -29,32 +32,29 @@ namespace _19
                 reports.Add(list);
             }
 
-            var beacons = DeduceMap(reports);
-            System.Console.WriteLine("Part 1: " + beacons.Count());
+            var beacons = FindAllBeacons(reports);            
+            sw.Stop();
+            System.Console.WriteLine("Part 1: " + beacons.Count());            
+            System.Console.WriteLine("Part 2: " + _maxDistance);
+            System.Console.WriteLine("Done in " + sw.ElapsedMilliseconds + "ms");
         }
 
-        private static IEnumerable<(int x, int y, int z)> DeduceMap(List<List<(int x, int y, int z)>> reports)
+        private static IEnumerable<(int x, int y, int z)> FindAllBeacons(List<List<(int x, int y, int z)>> reports)
         {
-            var allReports = reports.ToList();
-
-            var scannerLocations = new Nullable<(int x, int y, int z)>[allReports.Count];
+            var scannerLocations = new Nullable<(int x, int y, int z)>[reports.Count];
             scannerLocations[0] = (0, 0, 0);
             while (scannerLocations.Any(l => l == null))
             {
-                for (int i = 0; i < allReports.Count; i++)
+                for (int i = 0; i < reports.Count; i++)
                 {
-                    for (int j = 0; j < allReports.Count; j++)
+                    for (int j = 0; j < reports.Count; j++)
                     {
                         if (scannerLocations[i] != null && scannerLocations[j] == null)
                         {
-                            var absoluteScannerLocation = DetermineScannerLocation(allReports[i], allReports[j]);
+                            var absoluteScannerLocation = TryDetermineScannerLocation(reports[i], reports[j]);
                             if (absoluteScannerLocation.HasValue)
                             {
-                                var toSameTransformation = allReports[j].Select(c => GetTransformations(c)[absoluteScannerLocation.Value.transformationId]).ToList();
-
-                                var absoluted = toSameTransformation.Select(c => GetAbsoluteCoordinate(absoluteScannerLocation.Value.coord, c)).ToList();
-
-                                allReports[j] = absoluted;
+                                reports[j] = reports[j].Select(c => GetAbsoluteCoordinate(absoluteScannerLocation.Value.coord, GetTransformations(c)[absoluteScannerLocation.Value.transformationId])).ToList();
                                 scannerLocations[j] = absoluteScannerLocation.Value.coord;
                             }
                         }
@@ -67,45 +67,45 @@ namespace _19
             {
                 foreach (var scannerB in scannerLocations)
                 {
-                    var dist = GetRelativeCoordinate(scannerA.Value, scannerB.Value);
-                    var sum = Math.Abs(dist.x) + Math.Abs(dist.y) + Math.Abs(dist.z);
-                    if(sum > maxDistance)
+                    var relativeDistanceCoord = GetRelativeCoordinate(scannerA.Value, scannerB.Value);
+                    var manhattanDistance = Math.Abs(relativeDistanceCoord.x) + Math.Abs(relativeDistanceCoord.y) + Math.Abs(relativeDistanceCoord.z);
+                    if(manhattanDistance > maxDistance)
                     {
-                        maxDistance = sum;
+                        maxDistance = manhattanDistance;
                     }
                 }
             }
-            System.Console.WriteLine("Part 2: " + maxDistance);
+            _maxDistance = maxDistance;
 
-            return allReports.SelectMany(ar => ar).Distinct();
+            return reports.SelectMany(ar => ar).Distinct();
         }
 
-        private static Nullable<(int transformationId, (int x, int y, int z) coord)> DetermineScannerLocation(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
+        private static Nullable<(int transformationId, (int x, int y, int z) coord)> TryDetermineScannerLocation(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
         {
-            var requiredMatches = firstReport.Any(fr => fr.z != 0) ? 11 : 2;
             for (int j = 0; j < firstReport.Count; j++)
             {
                 var referenceBeacon = firstReport[j];
-                List<(int x, int y, int z)> list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).ToList();
+                var list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).ToList();
 
                 for (int i = 0; i < otherReport.Count; i++)
                 {
-                    var fb = otherReport[i];
-                    var otherBeacons = otherReport.Except(new[] { fb });
+                    var candidateSameReferenceBeacon = otherReport[i];
+                    var otherBeacons = otherReport.Except(new[] { candidateSameReferenceBeacon }).ToArray();
 
-                    List<(int transformationId, int x, int y, int z)> list2 = new List<(int transformationId, int x, int y, int z)>();
-                    foreach (var otherBeacon in otherBeacons)
+                    var list2 = new List<(int transformationId, int x, int y, int z)>();
+                    for(int b = 0; b < otherBeacons.Length; b++)
                     {
-                        var otherReferenceBeacon = GetRelativeCoordinate(fb, otherBeacon);
+                        var otherBeacon = otherBeacons[b];
+                        var otherReferenceBeacon = GetRelativeCoordinate(candidateSameReferenceBeacon, otherBeacon);
                         var possibleCoord = GetTransformations(otherReferenceBeacon);
                         for (int transformationId = 0; transformationId < possibleCoord.Length; transformationId++)
                         {
                             if (list.Contains((possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z)))
                             {
                                 list2.Add((transformationId, possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z));
-                                if (list2.Count() >= requiredMatches)
+                                if (list2.Count() >= 11)
                                 {
-                                    return (transformationId, GetRelativeCoordinate(GetTransformations(fb)[transformationId], referenceBeacon));
+                                    return (transformationId, GetRelativeCoordinate(GetTransformations(candidateSameReferenceBeacon)[transformationId], referenceBeacon));
                                 }
                             }
                         }
@@ -113,11 +113,6 @@ namespace _19
                 }
             }
             return null;
-        }
-
-        private static void PrintCoord((int x, int y, int z) coord)
-        {
-            System.Console.WriteLine(coord.x + "," + coord.y + "," + coord.z);
         }
 
         private static (int x, int y, int z) GetRelativeCoordinate((int x, int y, int z) firstBeacon, (int x, int y, int z) otherBeacon)
@@ -166,7 +161,7 @@ namespace _19
         private static (int x, int y, int z) StringToCoords(string str)
         {
             var coords = str.Split(",").Select(int.Parse).ToArray();
-            return (x: coords[0], y: coords[1], z: coords.Length > 2 ? coords[2] : 0);
+            return (x: coords[0], y: coords[1], z: coords[2]);
         }
     }
 }
