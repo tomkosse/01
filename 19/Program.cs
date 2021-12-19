@@ -29,12 +29,17 @@ namespace _19
                 reports.Add(list);
             }
 
-            DeduceMap(reports);
+            var beacons = DeduceMap(reports);
+            //beacons.OrderBy(b => b.x).ThenBy(b => b.y).ThenBy(b => b.z).ToList().ForEach(PrintCoord);
+            System.Console.WriteLine(beacons.Count());
         }
 
-        private static void DeduceMap(List<List<(int x, int y, int z)>> reports)
+        private static IEnumerable<(int x, int y, int z)> DeduceMap(List<List<(int x, int y, int z)>> reports)
         {
             var allReports = reports.ToList();
+
+            List<(int x, int y, int z)> uniqueBeacons = new List<(int x, int y, int z)>();
+            uniqueBeacons.AddRange(reports[0]);
 
             var scannerLocations = new Nullable<(int x, int y, int z)>[allReports.Count];
             scannerLocations[0] = (0, 0, 0);
@@ -49,27 +54,29 @@ namespace _19
                             var absoluteScannerLocation = DetermineScannerLocation(allReports[i], allReports[j]);
                             if (absoluteScannerLocation.HasValue)
                             {
-                                System.Console.Write("Found " + j + " by comparing to " + i + " at ");
+                                System.Console.WriteLine("Found " + j + " by comparing to " + i + " at ");
                                 PrintCoord(absoluteScannerLocation.Value.coord);
 
-                                var reverseTransformationId = GetReverseTransformation(absoluteScannerLocation.Value.transformationId);
-                                var toSameTransformation =  allReports[j].Select(c => GetTransformations(c)[reverseTransformationId]).ToList();
+                                var toSameTransformation =  allReports[j].Select(c => GetTransformations(c)[absoluteScannerLocation.Value.transformationId]).ToList();
 
-                                toSameTransformation.ToList().ForEach(PrintCoord);
-                                System.Console.WriteLine("-=========-");
                                 var absoluted = toSameTransformation.Select(c => GetAbsoluteCoordinate(absoluteScannerLocation.Value.coord, c)).ToList();
-                                absoluted.ToList().ForEach(PrintCoord);
                                 
                                 allReports[j] = absoluted;
                                 scannerLocations[j] = absoluteScannerLocation.Value.coord;
-                                
-                                System.Console.WriteLine("-===MATCHES====-");
-                                allReports[i].Intersect(allReports[j]).ToList().ForEach(PrintCoord);
+
+                                var notMatched = absoluted.Except(uniqueBeacons);
+                                System.Console.WriteLine("new beacons: " + notMatched.Count());
+                                uniqueBeacons.AddRange(notMatched);
+                                System.Console.WriteLine("Total beacons: " + uniqueBeacons.Count());
                             }
                         }
                     }
                 }
             }
+
+            System.Console.WriteLine(uniqueBeacons.Count);
+
+            return allReports.SelectMany(ar => ar).Distinct();
         }
 
         private static Nullable<(int transformationId, (int x, int y, int z) coord)> DetermineScannerLocation(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
@@ -109,7 +116,7 @@ namespace _19
 
         private static void PrintCoord((int x, int y, int z) coord)
         {
-            System.Console.WriteLine("X: " + coord.x + " Y: " + coord.y + " Z: " + coord.z);
+            System.Console.WriteLine(coord.x + "," + coord.y + "," + coord.z);
         }
 
         private static (int x, int y, int z) GetRelativeCoordinate((int x, int y, int z) firstBeacon, (int x, int y, int z) otherBeacon)
@@ -120,21 +127,6 @@ namespace _19
         private static (int x, int y, int z) GetAbsoluteCoordinate((int x, int y, int z) referenceOffset, (int x, int y, int z) beacon)
         {
             return (x: referenceOffset.x + beacon.x, y: referenceOffset.y + beacon.y, z: referenceOffset.z + beacon.z);
-        }
-
-
-        private static int GetReverseTransformation(int transformationId)
-        {
-            var transformations = GetTransformations((3,5,7));
-            var forwardTrans = transformations[transformationId];
-            for(int i=0; i < transformations.Length; i++)
-            {
-                if(GetTransformations(forwardTrans)[i] == (3,5,7))
-                {
-                    return i;
-                }
-            }
-            throw new Exception("Incomplete transformation table");
         }
 
         private static (int x, int y, int z)[] GetTransformations((int x, int y, int z) coord)
