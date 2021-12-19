@@ -34,36 +34,37 @@ namespace _19
 
         private static void DeduceMap(List<List<(int x, int y, int z)>> reports)
         {
-            var locations = new Nullable<(int x, int y, int z)>[reports.Count];
-            var baseReport = reports[0];
-            locations[0] = (0, 0, 0);
-            while (locations.Any(l => l == null))
+            var allReports = reports.ToList();
+
+            var scannerLocations = new Nullable<(int x, int y, int z)>[allReports.Count];
+            scannerLocations[0] = (0, 0, 0);
+            while (scannerLocations.Any(l => l == null))
             {
-                for (int i = 0; i < reports.Count; i++)
+                for (int i = 0; i < allReports.Count; i++)
                 {
-                    for (int j = 0; j < reports.Count; j++)
+                    for (int j = 0; j < allReports.Count; j++)
                     {
-                        if (locations[j] == null && locations[i] != null)
+                        if (scannerLocations[i] != null && scannerLocations[j] == null)
                         {
-                            var scannerLocation = MakeRelativeToSameBeacon(reports[i], reports[j]);
-                            if (scannerLocation.HasValue)
+                            var absoluteScannerLocation = DetermineScannerLocation(allReports[i], allReports[j]);
+                            if (absoluteScannerLocation.HasValue)
                             {
-                                System.Console.WriteLine("Found " + j + " by comparing to " + i + " at ");
-                                PrintCoord(scannerLocation.Value.coord);
+                                System.Console.Write("Found " + j + " by comparing to " + i + " at ");
+                                PrintCoord(absoluteScannerLocation.Value.coord);
 
-                                var reverseTransformation = MakeRelativeToSameBeacon(reports[j], reports[i]).Value.perspectiveId;
-                                System.Console.WriteLine("Reverse = " + reverseTransformation);
-                                var reversed = reports[j].Select(c => GetAbsoluteCoordinate(scannerLocation.Value.coord, GetPerspectives(c)[reverseTransformation])).ToList();
+                                var reverseTransformationId = GetReverseTransformation(absoluteScannerLocation.Value.transformationId);
+                                var toSameTransformation =  allReports[j].Select(c => GetTransformations(c)[reverseTransformationId]).ToList();
 
-                                if (reports[i].Intersect(reversed).Count() >= 12)
-                                {
-                                    reports[j] = reversed;
-                                    locations[j] = scannerLocation.Value.coord;
-                                }
-                                else
-                                {
-                                    System.Console.WriteLine("NOPE");
-                                }
+                                toSameTransformation.ToList().ForEach(PrintCoord);
+                                System.Console.WriteLine("-=========-");
+                                var absoluted = toSameTransformation.Select(c => GetAbsoluteCoordinate(absoluteScannerLocation.Value.coord, c)).ToList();
+                                absoluted.ToList().ForEach(PrintCoord);
+                                
+                                allReports[j] = absoluted;
+                                scannerLocations[j] = absoluteScannerLocation.Value.coord;
+                                
+                                System.Console.WriteLine("-===MATCHES====-");
+                                allReports[i].Intersect(allReports[j]).ToList().ForEach(PrintCoord);
                             }
                         }
                     }
@@ -71,39 +72,32 @@ namespace _19
             }
         }
 
-        private static Nullable<(int perspectiveId, (int x, int y, int z) coord)> MakeRelativeToSameBeacon(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
+        private static Nullable<(int transformationId, (int x, int y, int z) coord)> DetermineScannerLocation(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
         {
             var requiredMatches = firstReport.Any(fr => fr.z != 0) ? 11 : 2;
             for (int j = 0; j < firstReport.Count; j++)
             {
-                List<(int x, int y, int z)> list = new List<(int x, int y, int z)>();
                 var referenceBeacon = firstReport[j];
-                foreach (var otherBeacon in firstReport.Except(new[] { referenceBeacon }))
-                {
-                    var coord = GetRelativeCoordinate(referenceBeacon, otherBeacon);
-                    list.Add(coord);
-                }
+                List<(int x, int y, int z)> list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).ToList();
 
-                // All beacons in the first report are now relative to a beacon. Let's see if we can find the same beacon in another report
                 for (int i = 0; i < otherReport.Count; i++)
                 {
                     var fb = otherReport[i];
-                    var otherCoords = otherReport.Except(new[] { fb });
+                    var otherBeacons = otherReport.Except(new[] { fb });
 
-                    List<(int perspectiveId, int x, int y, int z)> list2 = new List<(int perspectiveId, int x, int y, int z)>();
-                    foreach (var otherBeacon in otherCoords)
+                    List<(int transformationId, int x, int y, int z)> list2 = new List<(int transformationId, int x, int y, int z)>();
+                    foreach (var otherBeacon in otherBeacons)
                     {
-                        var relCoord = GetRelativeCoordinate(fb, otherBeacon);
-                        var possibleCoord = GetPerspectives(relCoord);
-                        for (int perspectiveId = 0; perspectiveId < possibleCoord.Length; perspectiveId++)
+                        var otherReferenceBeacon = GetRelativeCoordinate(fb, otherBeacon);
+                        var possibleCoord = GetTransformations(otherReferenceBeacon);
+                        for (int transformationId = 0; transformationId < possibleCoord.Length; transformationId++)
                         {
-                            if (list.Contains((possibleCoord[perspectiveId].x, possibleCoord[perspectiveId].y, possibleCoord[perspectiveId].z)))
+                            if (list.Contains((possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z)))
                             {
-                                list2.Add((perspectiveId, possibleCoord[perspectiveId].x, possibleCoord[perspectiveId].y, possibleCoord[perspectiveId].z));
-
+                                list2.Add((transformationId, possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z));                                
                                 if (list2.Count() >= requiredMatches)
                                 {
-                                    return (perspectiveId, GetRelativeCoordinate(GetPerspectives(fb)[perspectiveId], referenceBeacon));
+                                    return (transformationId, GetRelativeCoordinate(GetTransformations(fb)[transformationId], referenceBeacon));
                                 }
                             }
                         }
@@ -128,7 +122,22 @@ namespace _19
             return (x: referenceOffset.x + beacon.x, y: referenceOffset.y + beacon.y, z: referenceOffset.z + beacon.z);
         }
 
-        private static (int x, int y, int z)[] GetPerspectives((int x, int y, int z) coord)
+
+        private static int GetReverseTransformation(int transformationId)
+        {
+            var transformations = GetTransformations((3,5,7));
+            var forwardTrans = transformations[transformationId];
+            for(int i=0; i < transformations.Length; i++)
+            {
+                if(GetTransformations(forwardTrans)[i] == (3,5,7))
+                {
+                    return i;
+                }
+            }
+            throw new Exception("Incomplete transformation table");
+        }
+
+        private static (int x, int y, int z)[] GetTransformations((int x, int y, int z) coord)
         {
             return new (int x, int y, int z)[]
             {
