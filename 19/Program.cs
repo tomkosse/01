@@ -43,19 +43,27 @@ namespace _19
         {
             var scannerLocations = new Nullable<(int x, int y, int z)>[reports.Count];
             scannerLocations[0] = (0, 0, 0);
-            while (scannerLocations.Any(l => l == null))
+            int found = 1;
+            bool[,] combiTried = new bool[reports.Count,reports.Count];
+
+            while (found < scannerLocations.Length)
             {
                 for (int i = 0; i < reports.Count; i++)
                 {
                     for (int j = 0; j < reports.Count; j++)
                     {
-                        if (scannerLocations[i] != null && scannerLocations[j] == null)
+                        if (scannerLocations[i] != null && scannerLocations[j] == null && !combiTried[i,j])
                         {
                             var absoluteScannerLocation = TryDetermineScannerLocation(reports[i], reports[j]);
                             if (absoluteScannerLocation.HasValue)
                             {
                                 reports[j] = reports[j].Select(c => GetAbsoluteCoordinate(absoluteScannerLocation.Value.coord, GetTransformations(c)[absoluteScannerLocation.Value.transformationId])).ToList();
                                 scannerLocations[j] = absoluteScannerLocation.Value.coord;
+                                found++;
+                            }
+                            else 
+                            {
+                                combiTried[i,j] = true;
                             }
                         }
                     }
@@ -68,10 +76,9 @@ namespace _19
                 foreach (var scannerB in scannerLocations)
                 {
                     var relativeDistanceCoord = GetRelativeCoordinate(scannerA.Value, scannerB.Value);
-                    var manhattanDistance = relativeDistanceCoord.ManhattanDistance;
-                    if (manhattanDistance > maxDistance)
+                    if (relativeDistanceCoord.ManhattanDistance > maxDistance)
                     {
-                        maxDistance = manhattanDistance;
+                        maxDistance = relativeDistanceCoord.ManhattanDistance;
                     }
                 }
             }
@@ -80,22 +87,17 @@ namespace _19
             return reports.SelectMany(ar => ar).Distinct();
         }
 
-        public static int ManhattanDistance(this (int x, int y, int z) coord)
-        {
-            return Math.Abs(coord.x) + Math.Abs(coord.y) + Math.Abs(coord.z);
-        }
-
         private static Nullable<(int transformationId, (int x, int y, int z) coord)> TryDetermineScannerLocation(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
         {
             for (int j = 0; j < firstReport.Count; j++)
             {
                 var referenceBeacon = firstReport[j];
-                var list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).OrderBy(c => c.ManhattanDistance).ToList();
+                var list = firstReport.Select(b => GetRelativeCoordinate(referenceBeacon, b)).OrderBy(c => c.ManhattanDistance).ToArray();
 
                 for (int i = 0; i < otherReport.Count; i++)
                 {
                     var candidateSameReferenceBeacon = otherReport[i];
-                    var otherBeacons = otherReport.Except(new[] { candidateSameReferenceBeacon }).Select(b => GetRelativeCoordinate(candidateSameReferenceBeacon, b)).OrderBy(c => c.ManhattanDistance).ToArray();
+                    var otherBeacons = otherReport.Select(b => GetRelativeCoordinate(candidateSameReferenceBeacon, b)).OrderBy(c => c.ManhattanDistance).ToArray();
 
                     int hit = 0;
                     for (int b = 0; b < otherBeacons.Length; b++)
@@ -108,7 +110,7 @@ namespace _19
                             if(distA == distB)
                             {
                                 hit++;
-                                if(hit >= 11)
+                                if(hit >= 12)
                                 {
                                     var possibleMatchingTransformedCoord = GetTransformations(otherReferenceBeacon.coord);
                                     for (int transformationId = 0; transformationId < possibleMatchingTransformedCoord.Length; transformationId++)
@@ -120,7 +122,7 @@ namespace _19
                                     }
                                 }
                             }
-                            else if (distB > distA)
+                            else if (distB > distA || otherBeacons.Length - b < (12 - hit))
                             {
                                 break;
                             }
@@ -134,7 +136,7 @@ namespace _19
         private static ((int x, int y, int z) coord, int ManhattanDistance) GetRelativeCoordinate((int x, int y, int z) firstBeacon, (int x, int y, int z) otherBeacon)
         {
             var coord = (x: otherBeacon.x - firstBeacon.x, y: otherBeacon.y - firstBeacon.y, z: otherBeacon.z - firstBeacon.z);
-            return (coord, coord.ManhattanDistance());
+            return (coord, Math.Abs(coord.x) + Math.Abs(coord.y) + Math.Abs(coord.z));
         }
 
         private static (int x, int y, int z) GetAbsoluteCoordinate((int x, int y, int z) referenceOffset, (int x, int y, int z) beacon)
@@ -146,14 +148,13 @@ namespace _19
         {
             return new (int x, int y, int z)[]
             {
-                (x: coord.x, y: coord.y, z: coord.z * -1),
+                (x: coord.y, y: coord.z * -1, z: coord.x * -1),
                 (x: coord.x, y: coord.z, z: coord.y * -1),
                 (x: coord.x, y: coord.y * -1, z: coord.z * -1),
                 (x: coord.x, y: coord.z * -1, z: coord.y),
                 (x: coord.y, y: coord.x, z: coord.z * -1),
                 (x: coord.y, y: coord.z, z: coord.x),
                 (x: coord.y, y: coord.x * -1, z: coord.z),
-                (x: coord.y, y: coord.z * -1, z: coord.x * -1),
                 (x: coord.z, y: coord.x, z: coord.y),
                 (x: coord.z, y: coord.y, z: coord.x * -1),
                 (x: coord.z, y: coord.x * -1, z: coord.y * -1),
@@ -172,6 +173,7 @@ namespace _19
                 (x: coord.z * -1, y: coord.y * -1, z: coord.x * -1),
 
                 (x: coord.x, y: coord.y, z: coord.z),
+                (x: coord.x, y: coord.y, z: coord.z * -1),
             };
         }
 
