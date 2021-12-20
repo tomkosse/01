@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace _19
 {
-    class Program
+    public static class Program
     {
         private static int _maxDistance;
 
@@ -32,9 +32,9 @@ namespace _19
                 reports.Add(list);
             }
 
-            var beacons = FindAllBeacons(reports);            
+            var beacons = FindAllBeacons(reports);
             sw.Stop();
-            System.Console.WriteLine("Part 1: " + beacons.Count());            
+            System.Console.WriteLine("Part 1: " + beacons.Count());
             System.Console.WriteLine("Part 2: " + _maxDistance);
             System.Console.WriteLine("Done in " + sw.ElapsedMilliseconds + "ms");
         }
@@ -68,8 +68,8 @@ namespace _19
                 foreach (var scannerB in scannerLocations)
                 {
                     var relativeDistanceCoord = GetRelativeCoordinate(scannerA.Value, scannerB.Value);
-                    var manhattanDistance = Math.Abs(relativeDistanceCoord.x) + Math.Abs(relativeDistanceCoord.y) + Math.Abs(relativeDistanceCoord.z);
-                    if(manhattanDistance > maxDistance)
+                    var manhattanDistance = relativeDistanceCoord.ManhattanDistance();
+                    if (manhattanDistance > maxDistance)
                     {
                         maxDistance = manhattanDistance;
                     }
@@ -80,33 +80,51 @@ namespace _19
             return reports.SelectMany(ar => ar).Distinct();
         }
 
+        public static int ManhattanDistance(this (int x, int y, int z) coord)
+        {
+            return Math.Abs(coord.x) + Math.Abs(coord.y) + Math.Abs(coord.z);
+        }
+
         private static Nullable<(int transformationId, (int x, int y, int z) coord)> TryDetermineScannerLocation(List<(int x, int y, int z)> firstReport, List<(int x, int y, int z)> otherReport)
         {
             for (int j = 0; j < firstReport.Count; j++)
             {
                 var referenceBeacon = firstReport[j];
-                var list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).ToList();
+                var list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).OrderBy(c => c.ManhattanDistance()).ToList();
 
                 for (int i = 0; i < otherReport.Count; i++)
                 {
                     var candidateSameReferenceBeacon = otherReport[i];
-                    var otherBeacons = otherReport.Except(new[] { candidateSameReferenceBeacon }).ToArray();
+                    var otherBeacons = otherReport.Except(new[] { candidateSameReferenceBeacon }).OrderBy(c => c.ManhattanDistance()).ToArray();
 
-                    var list2 = new List<(int transformationId, int x, int y, int z)>();
-                    for(int b = 0; b < otherBeacons.Length; b++)
+                    int hit = 0;
+                    for (int b = 0; b < otherBeacons.Length; b++)
                     {
                         var otherBeacon = otherBeacons[b];
                         var otherReferenceBeacon = GetRelativeCoordinate(candidateSameReferenceBeacon, otherBeacon);
-                        var possibleCoord = GetTransformations(otherReferenceBeacon);
-                        for (int transformationId = 0; transformationId < possibleCoord.Length; transformationId++)
+
+                        var distA = otherReferenceBeacon.ManhattanDistance();
+                        foreach(var beacon in list)
                         {
-                            if (list.Contains((possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z)))
+                            var distB = beacon.ManhattanDistance();
+                            if(distA == distB)
                             {
-                                list2.Add((transformationId, possibleCoord[transformationId].x, possibleCoord[transformationId].y, possibleCoord[transformationId].z));
-                                if (list2.Count() >= 11)
+                                hit++;
+                                if(hit >= 11)
                                 {
-                                    return (transformationId, GetRelativeCoordinate(GetTransformations(candidateSameReferenceBeacon)[transformationId], referenceBeacon));
+                                    var possibleMatchingTransformedCoord = GetTransformations(otherReferenceBeacon);
+                                    for (int transformationId = 0; transformationId < possibleMatchingTransformedCoord.Length; transformationId++)
+                                    {
+                                        if (beacon == (possibleMatchingTransformedCoord[transformationId].x, possibleMatchingTransformedCoord[transformationId].y, possibleMatchingTransformedCoord[transformationId].z))
+                                        {
+                                            return (transformationId, GetRelativeCoordinate(GetTransformations(candidateSameReferenceBeacon)[transformationId], referenceBeacon));
+                                        }
+                                    }
                                 }
+                            }
+                            else if (distB > distA)
+                            {
+                                break;
                             }
                         }
                     }
