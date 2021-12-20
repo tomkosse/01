@@ -68,7 +68,7 @@ namespace _19
                 foreach (var scannerB in scannerLocations)
                 {
                     var relativeDistanceCoord = GetRelativeCoordinate(scannerA.Value, scannerB.Value);
-                    var manhattanDistance = relativeDistanceCoord.ManhattanDistance();
+                    var manhattanDistance = relativeDistanceCoord.ManhattanDistance;
                     if (manhattanDistance > maxDistance)
                     {
                         maxDistance = manhattanDistance;
@@ -90,34 +90,32 @@ namespace _19
             for (int j = 0; j < firstReport.Count; j++)
             {
                 var referenceBeacon = firstReport[j];
-                var list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).OrderBy(c => c.ManhattanDistance()).ToList();
+                var list = firstReport.Except(new[] { referenceBeacon }).Select(b => GetRelativeCoordinate(referenceBeacon, b)).OrderBy(c => c.ManhattanDistance).ToList();
 
                 for (int i = 0; i < otherReport.Count; i++)
                 {
                     var candidateSameReferenceBeacon = otherReport[i];
-                    var otherBeacons = otherReport.Except(new[] { candidateSameReferenceBeacon }).OrderBy(c => c.ManhattanDistance()).ToArray();
+                    var otherBeacons = otherReport.Except(new[] { candidateSameReferenceBeacon }).Select(b => GetRelativeCoordinate(candidateSameReferenceBeacon, b)).OrderBy(c => c.ManhattanDistance).ToArray();
 
                     int hit = 0;
                     for (int b = 0; b < otherBeacons.Length; b++)
                     {
-                        var otherBeacon = otherBeacons[b];
-                        var otherReferenceBeacon = GetRelativeCoordinate(candidateSameReferenceBeacon, otherBeacon);
-
-                        var distA = otherReferenceBeacon.ManhattanDistance();
+                        var otherReferenceBeacon = otherBeacons[b];
+                        var distA = otherReferenceBeacon.ManhattanDistance;
                         foreach(var beacon in list)
                         {
-                            var distB = beacon.ManhattanDistance();
+                            var distB = beacon.ManhattanDistance;
                             if(distA == distB)
                             {
                                 hit++;
                                 if(hit >= 11)
                                 {
-                                    var possibleMatchingTransformedCoord = GetTransformations(otherReferenceBeacon);
+                                    var possibleMatchingTransformedCoord = GetTransformations(otherReferenceBeacon.coord);
                                     for (int transformationId = 0; transformationId < possibleMatchingTransformedCoord.Length; transformationId++)
                                     {
-                                        if (beacon == (possibleMatchingTransformedCoord[transformationId].x, possibleMatchingTransformedCoord[transformationId].y, possibleMatchingTransformedCoord[transformationId].z))
+                                        if (beacon.coord == possibleMatchingTransformedCoord[transformationId])
                                         {
-                                            return (transformationId, GetRelativeCoordinate(GetTransformations(candidateSameReferenceBeacon)[transformationId], referenceBeacon));
+                                            return (transformationId, GetRelativeCoordinate(GetTransformations(candidateSameReferenceBeacon)[transformationId], referenceBeacon).coord);
                                         }
                                     }
                                 }
@@ -133,9 +131,10 @@ namespace _19
             return null;
         }
 
-        private static (int x, int y, int z) GetRelativeCoordinate((int x, int y, int z) firstBeacon, (int x, int y, int z) otherBeacon)
+        private static ((int x, int y, int z) coord, int ManhattanDistance) GetRelativeCoordinate((int x, int y, int z) firstBeacon, (int x, int y, int z) otherBeacon)
         {
-            return (x: otherBeacon.x - firstBeacon.x, y: otherBeacon.y - firstBeacon.y, z: otherBeacon.z - firstBeacon.z);
+            var coord = (x: otherBeacon.x - firstBeacon.x, y: otherBeacon.y - firstBeacon.y, z: otherBeacon.z - firstBeacon.z);
+            return (coord, coord.ManhattanDistance());
         }
 
         private static (int x, int y, int z) GetAbsoluteCoordinate((int x, int y, int z) referenceOffset, (int x, int y, int z) beacon)
