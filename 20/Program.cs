@@ -1,33 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
 namespace _20
 {
-    public class Pixel
+    public abstract class Lit
     {
-        public bool IsLit { get; set; }
+        public abstract bool IsLit { get; }
+    }
 
+    public class BinaryValue : Lit
+    {
+        public override bool IsLit { get { return _isLit; } }
+        private bool _isLit;
+
+        public BinaryValue(char value)
+        {
+            _isLit = value == '#';
+        }
+    }
+
+    public class Pixel : Lit
+    {
+        public override bool IsLit { get { return _isLit; } }
+
+        private bool _isLit;
         public int X { get; set; }
         public int Y { get; set; }
 
-        public Pixel[] Neighbours { get; set; }
-
         public Pixel(int x, int y, bool isLit)
         {
-            IsLit = isLit;
+            _isLit = isLit;
             X = x;
             Y = y;
         }
 
-        public int AlgorithmValue
+        public int AlgorithmIndex { get; set; }
+
+        public void SetLit(bool lit)
         {
-            get
-            {
-                var bitString = new string(Neighbours.Select(n => n.IsLit ? '1' : '0').ToArray());
-                return Convert.ToInt32(bitString, 2);
-            }
+            _isLit = lit;
         }
     }
 
@@ -36,161 +50,118 @@ namespace _20
         static void Main(string[] args)
         {
             var lines = File.ReadAllLines(args[0]);
-            var parsed = lines.Select(line => line.ToCharArray().Select(c => c == '#' ? 1 : 0).ToArray()).ToArray(); ;
+            var sw = Stopwatch.StartNew();
+            var parsed = lines.Select(line => line.ToCharArray().Select(c => new BinaryValue(c)).ToArray()).ToArray();
 
-            var algo = parsed[0];
-
-            var pixels = CreatePixels(parsed.Skip(2).ToArray(), 6, false);
+            var pixels = EnlargeCanvas(parsed.Skip(2).ToArray(), false);
             int iterations = 50;
-            for(int i=1; i <= iterations; i++)
+            int afterTwoIterations = 0;
+            int afterFiftyIterations = 0;
+            for (int i = 1; i <= iterations; i++)
             {
-                pixels = ApplyAlgorithm(algo, pixels);
-                if(i == 2)
+                var applied = ApplyAlgorithm(parsed[0], pixels);
+                pixels = applied.matrix;
+                if (i == 2)
                 {
-                    System.Console.WriteLine("Part 1: " + pixels.Count(p => p.IsLit));
+                    afterTwoIterations = applied.amountLit;
+                }
+                else if (i == 50)
+                {
+                    afterFiftyIterations = applied.amountLit;
                 }
             }
-            System.Console.WriteLine("Part 2: " + pixels.Count(p => p.IsLit));
+            sw.Stop();
+            System.Console.WriteLine("Part 1: " + afterTwoIterations);
+            System.Console.WriteLine("Part 2: " + afterFiftyIterations);
+            System.Console.WriteLine("Done in " + sw.ElapsedMilliseconds + "ms");
         }
-        private static List<Pixel> ApplyAlgorithm(int[] algo, List<Pixel> pixels)
+        private static (int amountLit, Pixel[][] matrix) ApplyAlgorithm(BinaryValue[] algorithmValues, Pixel[][] pixels)
         {
-            var enlargedPixels = CreatePixels(ToBits(pixels), 6, pixels[0].IsLit);
-            var pixelsToChange = enlargedPixels.Select(p => (p.X, p.Y, val: algo[p.AlgorithmValue])).ToArray();
-            foreach (var pixel in pixelsToChange)
+            var enlargedPixels = EnlargeCanvas(pixels, pixels[0][0].IsLit);
+            var pixelsToChange = enlargedPixels.SelectMany(p => p).Select(p => (p.X, p.Y, shouldBeLit: algorithmValues[p.AlgorithmIndex].IsLit)).ToArray();
+            int amountLit = 0;
+            foreach (var toChange in pixelsToChange)
             {
-                var correspondingPixel = enlargedPixels.First(p => p.X == pixel.X && p.Y == pixel.Y);
-                correspondingPixel.IsLit = pixel.val == 1;
+                enlargedPixels[toChange.Y][toChange.X].SetLit(toChange.shouldBeLit);
+                amountLit += toChange.shouldBeLit ? 1 : 0;
             }
-            return enlargedPixels;
+            return (amountLit, enlargedPixels);
         }
 
-        private static List<Pixel> CreatePixels(int[][] numberMatrix, int enlargeBy, bool paddingLit)
+        private static Pixel[][] EnlargeCanvas(Lit[][] matrix, bool paddingLit)
         {
-            var padding = (enlargeBy / 2);
-
-            int height = numberMatrix.Length + enlargeBy;
-            int width = numberMatrix[0].Length + enlargeBy;
+            int height = matrix.Length + 2;
+            int width = matrix[0].Length + 2;
             Pixel[][] pixels = new Pixel[height][];
-            for (int y = 0; y < padding; y++)
+            pixels[0] = new Pixel[width];
+            for (int i = 0; i < width; i++)
             {
-                pixels[y] = new Pixel[width];
-                for (int i = 0; i < width; i++)
-                {
-                    pixels[y][i] = new Pixel(i, y, paddingLit);
-                }
+                pixels[0][i] = new Pixel(i, 0, paddingLit);
             }
-            for (int y = padding; y < height - padding; y++)
+            for (int y = 1; y < height - 1; y++)
             {
-                var row = numberMatrix[y - padding];
+                var row = matrix[y - 1];
                 pixels[y] = new Pixel[width];
+                pixels[y][0] = new Pixel(0, y, paddingLit);
 
-                for (int i = 0; i < padding; i++)
+                for (int x = 1; x < width - 1; x++)
                 {
-                    pixels[y][i] = new Pixel(i, y, paddingLit);
+                    var cell = matrix[y - 1][x - 1];
+                    pixels[y][x] = new Pixel(x, y, cell.IsLit);
                 }
-
-                for (int x = padding; x < width - padding; x++)
-                {
-                    var cell = numberMatrix[y - padding][x - padding];
-                    pixels[y][x] = new Pixel(x, y, cell == 1);
-                }
-                for (int i = width - padding; i < width; i++)
-                {
-                    pixels[y][i] = new Pixel(i, y, paddingLit);
-                }
+                pixels[y][width - 1] = new Pixel(width - 1, y, paddingLit);
             }
-
-            for (int y = height - padding; y < height; y++)
+            pixels[height - 1] = new Pixel[width];
+            for (int x = 0; x < width; x++)
             {
-                pixels[y] = new Pixel[width];
-                for (int x = 0; x < width; x++)
-                {
-                    pixels[y][x] = new Pixel(x, y, paddingLit);
-                }
+                pixels[height - 1][x] = new Pixel(x, height - 1, paddingLit);
             }
-
             foreach (var pixel in pixels.SelectMany(o => o))
             {
-                pixel.Neighbours = GetBitPixels(pixels, pixel);
+                pixel.AlgorithmIndex = GetAlgorithmIndex(pixels, pixel);
             }
-            return pixels.SelectMany(a => a).ToList();
+            return pixels;
         }
 
-        private static void PrintGrid(List<Pixel> pixels)
+        private static int GetAlgorithmIndex(Pixel[][] pixelMatrix, Pixel pixel)
         {
-            var startX = pixels.Min(p => p.X);
-            var startY = pixels.Min(p => p.Y);
-            var endX = pixels.Max(p => p.X);
-            var endY = pixels.Max(p => p.Y);
-            for (int y = startY; y <= endY; y++)
-            {
-                for (int x = startX; x <= endX; x++)
-                {
-                    var pixel = pixels.First(p => p.X == x && p.Y == y);
-                    Console.Write(pixel.IsLit ? "#" : ".");
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine();
-        }
-
-        private static int[][] ToBits(List<Pixel> pixels)
-        {
-            var startX = pixels.Min(p => p.X);
-            var startY = pixels.Min(p => p.Y);
-            var endX = pixels.Max(p => p.X);
-            var endY = pixels.Max(p => p.Y);
-            int[][] outPix = new int[endY + 1][];
-            for (int y = startY; y <= endY; y++)
-            {
-                outPix[y] = new int[endX + 1];
-                for (int x = startX; x <= endX; x++)
-                {
-                    var pixel = pixels.First(p => p.X == x && p.Y == y);
-                    outPix[y][x] = pixel.IsLit ? 1 : 0;
-                }
-            }
-            return outPix;
-        }
-
-        private static Pixel[] GetBitPixels(Pixel[][] pixelMatrix, Pixel pixel)
-        {
-            List<Pixel> pixels = new List<Pixel>();
+            int val = 0;
             var row = pixelMatrix[pixel.Y];
             if (pixel.Y > 0)
             {
                 if (pixel.X > 0)
                 {
-                    pixels.Add(pixelMatrix[pixel.Y - 1][pixel.X - 1]);
+                    val = (val << 1) + (pixelMatrix[pixel.Y - 1][pixel.X - 1].IsLit ? 1 : 0);
                 }
-                pixels.Add(pixelMatrix[pixel.Y - 1][pixel.X]);
+                val = (val << 1) + (pixelMatrix[pixel.Y - 1][pixel.X].IsLit ? 1 : 0);
                 if (pixel.X < row.Length - 1)
                 {
-                    pixels.Add(pixelMatrix[pixel.Y - 1][pixel.X + 1]);
+                    val = (val << 1) + (pixelMatrix[pixel.Y - 1][pixel.X + 1].IsLit ? 1 : 0);
                 }
             }
             if (pixel.X > 0)
             {
-                pixels.Add(pixelMatrix[pixel.Y][pixel.X - 1]);
+                val = (val << 1) + (pixelMatrix[pixel.Y][pixel.X - 1].IsLit ? 1 : 0);
             }
-            pixels.Add(pixel);
+            val = (val << 1) + (pixel.IsLit ? 1 : 0);
+
             if (pixel.X < row.Length - 1)
             {
-                pixels.Add(pixelMatrix[pixel.Y][pixel.X + 1]);
+                val = (val << 1) + (pixelMatrix[pixel.Y][pixel.X + 1].IsLit ? 1 : 0);
             }
             if (pixel.Y < pixelMatrix.Length - 1)
             {
                 if (pixel.X > 0)
                 {
-                    pixels.Add(pixelMatrix[pixel.Y + 1][pixel.X - 1]);
+                    val = (val << 1) + (pixelMatrix[pixel.Y + 1][pixel.X - 1].IsLit ? 1 : 0);
                 }
-                pixels.Add(pixelMatrix[pixel.Y + 1][pixel.X]);
+                val = (val << 1) + (pixelMatrix[pixel.Y + 1][pixel.X].IsLit ? 1 : 0);
                 if (pixel.X < row.Length - 1)
                 {
-                    pixels.Add(pixelMatrix[pixel.Y + 1][pixel.X + 1]);
+                    val = (val << 1) + (pixelMatrix[pixel.Y + 1][pixel.X + 1].IsLit ? 1 : 0);
                 }
             }
-            return pixels.ToArray();
+            return val;
         }
     }
 }
