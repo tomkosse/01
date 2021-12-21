@@ -14,15 +14,16 @@ namespace _21
             var lines = File.ReadAllLines(args[0]);
             var sw = Stopwatch.StartNew();
             var players = lines.Select(l => (int)char.GetNumericValue(l[28])).Select(i => i - 1).ToArray();
+            
             var (scores, turn) = SimulateGameWithDeterministicDice(players.ToArray());
             int part1 = Math.Min(scores[0], scores[1]) * turn;
 
             GenerateDiceOutcomesWithDiracDice(players[0], players[1], 0, 0, new Stack<int>(), 1, true);
-            var winnerUniverses = Math.Max(tally[0], tally[1]);
+            var part2 = Math.Max(tally[0], tally[1]);
 
             sw.Stop();
             System.Console.WriteLine("Part 1: " + part1);
-            System.Console.WriteLine("Part 2: " + winnerUniverses);
+            System.Console.WriteLine("Part 2: " + part2);
             System.Console.WriteLine("Done in " + sw.ElapsedMilliseconds + "ms");
         }
 
