@@ -18,7 +18,7 @@ namespace _21
             var (scores, turn) = SimulateGameWithDeterministicDice(players.ToArray());
             int part1 = Math.Min(scores[0], scores[1]) * turn;
 
-            GenerateDiceOutcomesWithDiracDice(players[0], players[1], 0, 0, new Stack<int>(), 1, true);
+            GenerateDiceOutcomesWithDiracDice(players[0], players[1], 0, 0, 1, true);
             var part2 = Math.Max(tally[0], tally[1]);
 
             sw.Stop();
@@ -27,7 +27,7 @@ namespace _21
             System.Console.WriteLine("Done in " + sw.ElapsedMilliseconds + "ms");
         }
 
-        private static void GenerateDiceOutcomesWithDiracDice(int positionP1, int positionP2, int scoreP1, int scoreP2, Stack<int> currentChain, long universeCounter, bool isPlayerOnesTurn)
+        private static void GenerateDiceOutcomesWithDiracDice(int positionP1, int positionP2, int scoreP1, int scoreP2, long universeCounter, bool isPlayerOnesTurn)
         {
             if(isPlayerOnesTurn == false && scoreP1 >= 21)
             {
@@ -42,19 +42,17 @@ namespace _21
 
             for(int i=3; i <= 9; i++)
             {
-                currentChain.Push(i);
                 var universes = Universes[i - 3];
                 if(isPlayerOnesTurn)
                 {
                     var loc = (positionP1 + i) % 10;
-                    GenerateDiceOutcomesWithDiracDice(loc, positionP2, scoreP1 + loc + 1, scoreP2, currentChain, universeCounter * universes, false);
+                    GenerateDiceOutcomesWithDiracDice(loc, positionP2, scoreP1 + loc + 1, scoreP2, universeCounter * universes, false);
                 }
                 else
                 {
                     var loc = (positionP2 + i) % 10;
-                    GenerateDiceOutcomesWithDiracDice(positionP1, loc, scoreP1, scoreP2 + loc + 1, currentChain, universeCounter * universes, true);
+                    GenerateDiceOutcomesWithDiracDice(positionP1, loc, scoreP1, scoreP2 + loc + 1, universeCounter * universes, true);
                 }
-                currentChain.Pop();
             }
         }
 
