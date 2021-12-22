@@ -25,7 +25,7 @@ namespace _22
             System.Console.WriteLine("Done in : " + sw.ElapsedMilliseconds + "ms");
         }
 
-        private static BigInteger Part2((bool isOn, int[] bounds)[] cubes)
+        private static long Part2((bool isOn, int[] bounds)[] cubes)
         {
             var processedCubes = new List<(bool isOn, int[] bounds)>();
             
@@ -34,7 +34,7 @@ namespace _22
                 processedCubes = processedCubes.GetUndoubledCubes(cube);
             }
 
-            BigInteger runningOnCount = 0;
+            long runningOnCount = 0;
             foreach(var cube in processedCubes)
             {
                 var vol = cube.bounds.Volume();
