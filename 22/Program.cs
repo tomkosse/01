@@ -14,12 +14,10 @@ namespace _22
             var input = File.ReadAllLines(args[0]);
             var sw = Stopwatch.StartNew();
 
-            var boundsPerLinePart1 = input.Select(l => UglyParse(l.ToCharArray())).ToArray();
+            var bounds = input.Select(l => QuickParse(l.ToCharArray())).ToArray();
+            var part1 = Part1(bounds);
+            var part2 = Part2(bounds);
 
-            var part1 = Part1(boundsPerLinePart1);
-
-            var boundsPerLinePart2 = input.Select(l => UglyParse(l.ToCharArray())).ToArray();
-            var part2 = Part2(boundsPerLinePart2);
             sw.Stop();
 
             System.Console.WriteLine("Part 1: " + part1);
@@ -31,9 +29,8 @@ namespace _22
         {
             var processedCubes = new List<(bool isOn, int[] bounds)>();
             
-            for(int i=0; i < cubes.Length; i++)
+            foreach(var cube in cubes)
             {
-                var cube = cubes[i];
                 processedCubes = processedCubes.GetUndoubledCubes(cube);
             }
 
@@ -54,9 +51,9 @@ namespace _22
             return a * b * c;
         }
 
-        private static List<(bool isOn, int[] bounds)> GetUndoubledCubes(this IEnumerable<(bool isOn, int[] bounds)> cubes, (bool isOn, int[] bounds) cube)
+        private static List<(bool isOn, int[] bounds)> GetUndoubledCubes(this List<(bool isOn, int[] bounds)> cubes, (bool isOn, int[] bounds) cube)
         {
-            List<(bool isOn, int[] bounds)> newCubes = new List<(bool isOn, int[] bounds)>();
+            List<(bool isOn, int[] bounds)> newCubes = new List<(bool isOn, int[] bounds)>(cubes.Count + 2);
             foreach(var c in cubes)
             {
                 int endX = Math.Min(c.bounds[1], cube.bounds[1]);
@@ -69,14 +66,14 @@ namespace _22
                 var xOverlap = Math.Max(0, endX - startX + 1);
                 var yOverlap = Math.Max(0, endY - startY + 1);
                 var zOverlap = Math.Max(0, endZ - startZ + 1);
-                var volume = xOverlap * yOverlap * zOverlap;
+                bool overlapt = xOverlap != 0 && yOverlap != 0 && zOverlap != 0;
                 newCubes.Add(c);
-                if(volume != 0 && cube.isOn == c.isOn)
+                if(overlapt && cube.isOn == c.isOn)
                 {
                     var newCoords = new int[] { startX, endX, startY, endY, startZ, endZ };
                     newCubes.Add((!cube.isOn, newCoords));
                 }
-                else if (volume != 0 && cube.isOn != c.isOn)
+                else if (overlapt && cube.isOn != c.isOn)
                 {
                     var newCoords = new int[] { startX, endX, startY, endY, startZ, endZ};
                     newCubes.Add((cube.isOn, newCoords));
@@ -93,30 +90,30 @@ namespace _22
         {
             bool[,,] reactor = new bool[101, 101, 101];
 
-            foreach (var bound in cubes)
+            foreach (var cube in cubes)
             {
-                var startX = Math.Max(bound.bounds[0] + 50, 0);
-                var endX = Math.Min(100, bound.bounds[1] + 50);
-                var startY = Math.Max(bound.bounds[2] + 50, 0);
-                var endY = Math.Min(100, bound.bounds[3] + 50);
-                var startZ = Math.Max(bound.bounds[4] + 50, 0);
-                var endZ = Math.Min(100, bound.bounds[5] + 50);
+                var startX = Math.Max(cube.bounds[0] + 50, 0);
+                var endX = Math.Min(100, cube.bounds[1] + 50);
+                var startY = Math.Max(cube.bounds[2] + 50, 0);
+                var endY = Math.Min(100, cube.bounds[3] + 50);
+                var startZ = Math.Max(cube.bounds[4] + 50, 0);
+                var endZ = Math.Min(100, cube.bounds[5] + 50);
                 for (int x = startX; x <= endX; x++)
                 {
                     for (int y = startY; y <= endY; y++)
                     {
                         for (int z = startZ; z <= endZ; z++)
                         {
-                            reactor[x, y, z] = bound.isOn;
+                            reactor[x, y, z] = cube.isOn;
                         }
                     }
                 }
             }
 
             int count = 0;
-            foreach (var el in reactor)
+            foreach (var cube in reactor)
             {
-                if (el)
+                if (cube)
                 {
                     count++;
                 }
@@ -124,19 +121,17 @@ namespace _22
             return count;
         }
 
-        private static (bool isOn, int[] bounds) UglyParse(char[] chars)
+        private static (bool isOn, int[] bounds) QuickParse(char[] chars)
         {
             int[] numbers = new int[6];
             int idx = 0;
             bool skipping = false;
             bool isNegative = false;
-            var startIdx = 5;
             var isOn = chars[1] == 'n';
-            if(!isOn)
-            {
-                startIdx = 6;
-            }
-            for (int i = startIdx; i < chars.Length; i++)
+            
+            var cursorStart = isOn ? 5 : 6;
+
+            for (int i = cursorStart; i < chars.Length; i++)
             {
                 var c = chars[i];
                 if (Char.IsNumber(c))
@@ -166,9 +161,7 @@ namespace _22
             {
                 numbers[idx] *= -1;
             }
-
             return (isOn, numbers);
         }
-
     }
 }
