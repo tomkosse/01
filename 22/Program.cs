@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 
 namespace _22
 {
@@ -26,7 +27,7 @@ namespace _22
             System.Console.WriteLine("Done in : " + sw.ElapsedMilliseconds + "ms");
         }
 
-        private static long Part2((bool isOn, int[] bounds)[] cubes)
+        private static BigInteger Part2((bool isOn, int[] bounds)[] cubes)
         {
             var processedCubes = new List<(bool isOn, int[] bounds)>();
             
@@ -36,27 +37,21 @@ namespace _22
                 processedCubes = processedCubes.GetUndoubledCubes(cube);
             }
 
-            long runningOnCount = 0;
+            BigInteger runningOnCount = 0;
             foreach(var cube in processedCubes)
             {
                 var vol = cube.bounds.Volume();
-                System.Console.WriteLine("Cube " + (cube.isOn ? 1 : 0) + " " + string.Join(",", cube.bounds) + " vol. " + vol);
-                if(cube.isOn)
-                {
-                    runningOnCount += vol;
-                }
-                else 
-                {
-                    runningOnCount -= vol;
-                }
-                System.Console.WriteLine("   => " + runningOnCount);
+                runningOnCount += cube.isOn ? vol : vol * -1;
             }
             return runningOnCount;
         }
         
         private static long Volume(this int[] bounds)
         {
-            return (bounds[1] - bounds[0] + 1) * (bounds[3] - bounds[2] + 1) * (bounds[5] - bounds[4] + 1);
+            long a = Math.Abs(bounds[1] - bounds[0] + 1);
+            long b = Math.Abs(bounds[3] - bounds[2] + 1);
+            long c = Math.Abs(bounds[5] - bounds[4] + 1);
+            return a * b * c;
         }
 
         private static List<(bool isOn, int[] bounds)> GetUndoubledCubes(this IEnumerable<(bool isOn, int[] bounds)> cubes, (bool isOn, int[] bounds) cube)
