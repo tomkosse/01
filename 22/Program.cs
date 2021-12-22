@@ -45,10 +45,7 @@ namespace _22
         
         private static long Volume(this int[] bounds)
         {
-            long a = Math.Abs(bounds[1] - bounds[0] + 1);
-            long b = Math.Abs(bounds[3] - bounds[2] + 1);
-            long c = Math.Abs(bounds[5] - bounds[4] + 1);
-            return a * b * c;
+            return (bounds[1] - bounds[0] + 1L) * (bounds[3] - bounds[2] + 1L) * (bounds[5] - bounds[4] + 1L);
         }
 
         private static List<(bool isOn, int[] bounds)> GetUndoubledCubes(this List<(bool isOn, int[] bounds)> cubes, (bool isOn, int[] bounds) cube)
@@ -56,6 +53,8 @@ namespace _22
             List<(bool isOn, int[] bounds)> newCubes = new List<(bool isOn, int[] bounds)>(cubes.Count + 2);
             foreach(var c in cubes)
             {
+                newCubes.Add(c);
+
                 int endX = Math.Min(c.bounds[1], cube.bounds[1]);
                 int startX = Math.Max(c.bounds[0], cube.bounds[0]);
                 int endY = Math.Min(c.bounds[3], cube.bounds[3]);
@@ -66,8 +65,8 @@ namespace _22
                 var xOverlap = Math.Max(0, endX - startX + 1);
                 var yOverlap = Math.Max(0, endY - startY + 1);
                 var zOverlap = Math.Max(0, endZ - startZ + 1);
+
                 bool overlapt = xOverlap != 0 && yOverlap != 0 && zOverlap != 0;
-                newCubes.Add(c);
                 if(overlapt && cube.isOn == c.isOn)
                 {
                     var newCoords = new int[] { startX, endX, startY, endY, startZ, endZ };
@@ -75,7 +74,7 @@ namespace _22
                 }
                 else if (overlapt && cube.isOn != c.isOn)
                 {
-                    var newCoords = new int[] { startX, endX, startY, endY, startZ, endZ};
+                    var newCoords = new int[] { startX, endX, startY, endY, startZ, endZ };
                     newCubes.Add((cube.isOn, newCoords));
                 }
             }
