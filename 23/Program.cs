@@ -113,7 +113,7 @@ namespace _23
                 var tile = Tiles[i];
                 hashCode = hashCode * 7302013 ^ tile.GetHashCode();
             }
-            for(int i=0; i < amphipods.Count; i++)
+            for (int i = 0; i < amphipods.Count; i++)
             {
                 var amphi = amphipods[i];
                 hashCode = hashCode * 3102037 ^ amphi.GetHashCode();
@@ -137,7 +137,7 @@ namespace _23
                     return false;
                 }
             }
-            
+
             for (int i = 0; i < amphipods.Count; i++)
             {
                 var amphi = amphipods[i];
@@ -160,7 +160,7 @@ namespace _23
                     if (amphipod.Character == startTile.AlcoveCharacter)
                     {
                         var alcoves = Tiles.Where(t => t.AlcoveCharacter == startTile.AlcoveCharacter).OrderByDescending(t => t.Y).TakeWhile(t => t.OccupiedByRightAmphipod);
-                        if(alcoves.Contains(startTile))
+                        if (alcoves.Contains(startTile))
                         {
                             continue;
                         }
@@ -370,23 +370,27 @@ namespace _23
             int localLowestCostFound = lowestCostFound;
             foreach (var move in moves)
             {
-                game.DoMove(move);
                 int newCost = currentTotalCost + move.Cost;
-                if (Game.ZobristTable.ContainsKey(game))
+                if (newCost < localLowestCostFound)
                 {
-                    var cost = Game.ZobristTable[game];
-                    localLowestCostFound = Math.Min(cost, newCost);
-                }
-                else
-                {
-                    if (newCost < localLowestCostFound)
+                    game.DoMove(move);
+                    int outcome = int.MinValue;
+                    if (Game.ZobristTable.ContainsKey(game))
                     {
-                        var outcome = FindLowestCost(move, game, currentTotalCost, localLowestCostFound);
-                        Game.ZobristTable[game] = outcome;
-                        localLowestCostFound = outcome;
+                        outcome = newCost + Game.ZobristTable[game];
                     }
+                    else
+                    {
+                        outcome = FindLowestCost(move, game, currentTotalCost, localLowestCostFound);
+                    }
+                    if (outcome < localLowestCostFound)
+                    {
+                        localLowestCostFound = outcome;
+                        var costTilEnd = outcome - newCost;
+                        Game.ZobristTable[game] = costTilEnd;
+                    }
+                    game.UndoMove(move);
                 }
-                game.UndoMove(move);
             }
             return localLowestCostFound;
         }
