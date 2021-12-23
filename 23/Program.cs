@@ -305,7 +305,7 @@ namespace _23
         {
             var lines = File.ReadAllLines(args[0]);
             var game = CreateGame(lines);
-            var lowestCost = FindLowestCost(null, game);
+            var lowestCost = FindLowestCost(game);
             System.Console.WriteLine(lowestCost);
         }
 
@@ -356,38 +356,37 @@ namespace _23
             .Where(t => t != null);
         }
 
-        private static int FindLowestCost(Move currentMove, Game game, int currentCost = 0, int lowestCostFound = int.MaxValue)
+        private static int FindLowestCost(Game game, int currentCost = 0, int lowestCostFound = int.MaxValue)
         {
-            int currentTotalCost = currentCost + (currentMove?.Cost).GetValueOrDefault();
-            if (game.IsDone)
-            {
-                System.Console.WriteLine("Solved for " + currentTotalCost);
-                return currentTotalCost;
-            }
-
             var moves = OrderMoves(game.PossibleMoves.ToArray());
 
             int localLowestCostFound = lowestCostFound;
             foreach (var move in moves)
             {
-                int newCost = currentTotalCost + move.Cost;
-                if (newCost < localLowestCostFound)
+                int costAfterMove = currentCost + move.Cost;
+                if (costAfterMove < localLowestCostFound)
                 {
                     game.DoMove(move);
-                    int outcome = int.MinValue;
+                    if(game.IsDone)
+                    {
+                        System.Console.WriteLine("Solved for " + costAfterMove);
+                        return costAfterMove;
+                    }
+                    int outcome;
                     if (Game.ZobristTable.ContainsKey(game))
                     {
-                        outcome = newCost + Game.ZobristTable[game];
+                        outcome = costAfterMove + Game.ZobristTable[game];
                     }
                     else
                     {
-                        outcome = FindLowestCost(move, game, currentTotalCost, localLowestCostFound);
+                        outcome = FindLowestCost(game, costAfterMove, localLowestCostFound);
+                        Game.ZobristTable[game] = outcome - costAfterMove;                        
                     }
+                    
                     if (outcome < localLowestCostFound)
                     {
                         localLowestCostFound = outcome;
-                        var costTilEnd = outcome - newCost;
-                        Game.ZobristTable[game] = costTilEnd;
+                        System.Console.WriteLine("Setting localLowestCostFound to " + outcome);
                     }
                     game.UndoMove(move);
                 }
