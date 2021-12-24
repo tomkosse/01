@@ -83,11 +83,22 @@ namespace _23
             tile.Amphipod = this;
             this.Tile = tile;
         }
+
+        public override int GetHashCode()
+        {
+            int hashCode = 1430287;
+            hashCode = hashCode * 7302013 ^ X.GetHashCode();
+            hashCode = hashCode * 7302013 ^ Y.GetHashCode();
+            hashCode = hashCode * 7302013 ^ Character.GetHashCode();
+            return hashCode;
+        }
     }
     public class Game
     {
         public List<Tile> Tiles { get; }
         private List<Amphipod> amphipods;
+
+        private Stack<Move> PlayedMoves { get; }
 
         public static Dictionary<Game, int> ZobristTable = new Dictionary<Game, int>();
 
@@ -95,6 +106,8 @@ namespace _23
         {
             this.Tiles = tiles;
             this.amphipods = amphipods;
+            this.amphipods.Reverse();
+            this.PlayedMoves = new Stack<Move>();
         }
 
         public bool IsDone
@@ -108,11 +121,6 @@ namespace _23
         public override int GetHashCode()
         {
             int hashCode = 1430287;
-            for (int i = 0; i < Tiles.Count; i++)
-            {
-                var tile = Tiles[i];
-                hashCode = hashCode * 7302013 ^ tile.GetHashCode();
-            }
             for (int i = 0; i < amphipods.Count; i++)
             {
                 var amphi = amphipods[i];
@@ -154,8 +162,13 @@ namespace _23
         {
             get
             {
+                List<Move> moves = new List<Move>();
                 foreach (Amphipod amphipod in amphipods)
                 {
+                    if(PlayedMoves.Any() && PlayedMoves.Peek().Amphipod == amphipod)
+                    {
+                        continue;
+                    }
                     var startTile = amphipod.Tile;
                     if (amphipod.Character == startTile.AlcoveCharacter)
                     {
@@ -167,11 +180,9 @@ namespace _23
                     }
                     var routes = new List<List<Tile>>();
                     GenerateRoutes(startTile, new List<Tile>() { startTile }, routes);
-                    foreach (var route in routes.Where(r => IsValidMove(amphipod, r.First(), r.Last())))
-                    {
-                        yield return new Move(route, amphipod, this);
-                    }
+                    moves.AddRange(routes.Where(r => IsValidMove(amphipod, startTile, r.Last())).Select(route => new Move(route, amphipod, this)));
                 }
+                return moves;
             }
         }
 
@@ -202,34 +213,13 @@ namespace _23
         internal void DoMove(Move move)
         {
             move.Amphipod.MoveTo(this, move.EndTile);
+            PlayedMoves.Push(move);
         }
 
         internal void UndoMove(Move move)
         {
             move.Amphipod.MoveTo(this, move.StartTile);
-        }
-
-        internal void Print()
-        {
-            Console.WriteLine();
-            for (int y = 0; y < 5; y++)
-            {
-                for (int x = 0; x < 15; x++)
-                {
-                    var tile = Tiles.FirstOrDefault(t => t.X == x && t.Y == y);
-                    if (tile != null)
-                    {
-                        var printChar = tile.Occupied ? tile.Amphipod.Character : '.';
-                        Console.Write(printChar);
-                    }
-                    else
-                    {
-                        Console.Write('#');
-                    }
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine();
+            PlayedMoves.Pop();
         }
     }
 
@@ -264,37 +254,6 @@ namespace _23
             get
             {
                 return EndTile.IsAlcove;
-            }
-        }
-
-        public bool RemovesAmphipodFromWrongPlace
-        {
-            get
-            {
-                return Amphipod.Tile.IsAlcove && Amphipod.Tile.AlcoveCharacter.Value != Amphipod.Character;
-            }
-        }
-
-        public bool EmptiesAlcove
-        {
-            get
-            {
-                return RemovesAmphipodFromWrongPlace && _game.Tiles.Where(t => t.IsAlcove && t.AlcoveCharacter == StartTile.AlcoveCharacter && t != StartTile).All(t => !t.Occupied || t.Amphipod.Character == t.AlcoveCharacter.Value);
-            }
-        }
-
-        public int DistanceToRightBeforeAlcove
-        {
-            get
-            {
-                if (EndTile.IsHallway)
-                {
-                    return Math.Abs(_game.Tiles.First(t => t.IsAlcove && t.AlcoveCharacter == Amphipod.Character).X - 1 - EndTile.X);
-                }
-                else
-                {
-                    return -1;
-                }
             }
         }
     }
@@ -363,8 +322,8 @@ namespace _23
                 System.Console.WriteLine("Solved for " + currentCost);
                 return currentCost;
             }
-            var moves = OrderMoves(game.PossibleMoves.ToArray());
-
+            var moves = OrderMoves(game.PossibleMoves);
+            
             int localLowestCostFound = lowestCostFound;
             foreach (var move in moves)
             {
@@ -376,7 +335,10 @@ namespace _23
                     if (Game.ZobristTable.ContainsKey(game))
                     {
                         outcome = costAfterMove + Game.ZobristTable[game];
-                        System.Console.WriteLine("HIT");
+                        if (Game.ZobristTable[game] == int.MaxValue)
+                        {
+                            outcome = int.MaxValue;
+                        }
                     }
                     else
                     {
@@ -384,19 +346,25 @@ namespace _23
                     }
                     if (outcome < localLowestCostFound)
                     {
-                        var costFromHere = outcome - costAfterMove;
-                        Game.ZobristTable[game] = costFromHere;
                         localLowestCostFound = outcome;
+
+                        var costToEnd = outcome - costAfterMove;
+                        if (!Game.ZobristTable.ContainsKey(game) || costToEnd < Game.ZobristTable[game])
+                        {
+                            Game.ZobristTable[game] = outcome == int.MaxValue ? int.MaxValue : costToEnd;
+                        }
                     }
+
+                    game.UndoMove(move);
                 }
-                game.UndoMove(move);
             }
             return localLowestCostFound;
         }
 
-        private static Move[] OrderMoves(Move[] moves)
+        private static Move[] OrderMoves(IEnumerable<Move> moves)
         {
-            return moves.OrderByDescending(m => m.PutsAmphipodInRightPlace).ThenBy(m => m.Cost).ThenBy(m => m.EmptiesAlcove).ThenBy(m => m.DistanceToRightBeforeAlcove).ToArray();
+            var m = moves.OrderBy(m => m.PutsAmphipodInRightPlace).ThenByDescending(m => m.StartTile.X).ThenBy(m => m.EndTile.X).ToArray();
+            return m;
         }
     }
 }
