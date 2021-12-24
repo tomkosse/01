@@ -358,6 +358,11 @@ namespace _23
 
         private static int FindLowestCost(Game game, int currentCost = 0, int lowestCostFound = int.MaxValue)
         {
+            if (game.IsDone)
+            {
+                System.Console.WriteLine("Solved for " + currentCost);
+                return currentCost;
+            }
             var moves = OrderMoves(game.PossibleMoves.ToArray());
 
             int localLowestCostFound = lowestCostFound;
@@ -367,29 +372,24 @@ namespace _23
                 if (costAfterMove < localLowestCostFound)
                 {
                     game.DoMove(move);
-                    if(game.IsDone)
-                    {
-                        System.Console.WriteLine("Solved for " + costAfterMove);
-                        return costAfterMove;
-                    }
                     int outcome;
                     if (Game.ZobristTable.ContainsKey(game))
                     {
                         outcome = costAfterMove + Game.ZobristTable[game];
+                        System.Console.WriteLine("HIT");
                     }
                     else
                     {
                         outcome = FindLowestCost(game, costAfterMove, localLowestCostFound);
-                        Game.ZobristTable[game] = outcome - costAfterMove;                        
                     }
-                    
                     if (outcome < localLowestCostFound)
                     {
+                        var costFromHere = outcome - costAfterMove;
+                        Game.ZobristTable[game] = costFromHere;
                         localLowestCostFound = outcome;
-                        System.Console.WriteLine("Setting localLowestCostFound to " + outcome);
                     }
-                    game.UndoMove(move);
                 }
+                game.UndoMove(move);
             }
             return localLowestCostFound;
         }
