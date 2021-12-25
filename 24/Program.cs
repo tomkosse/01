@@ -53,7 +53,7 @@ namespace _24
                     registers[actions[numberIndex].inputRegister] = j;
                     foreach(var action in actions[numberIndex].statements)
                     {
-                        action.Invoke(registers);
+                        action(registers);
                     }
                     var foundZ = registers['z'];
                     long newNumber = outcomes[numbers[i]] * 10 + j;
