@@ -3,7 +3,7 @@
 var lines = File.ReadAllLines(args[0]);
 var sw = Stopwatch.StartNew();
 
-var allCells = GetCellMatrix(lines.Select(lines => lines.ToCharArray()).ToArray());
+var allCells = GetCellMatrix(lines.Select(l => l.ToCharArray()).ToArray());
 
 int countMoved = 1;
 int step = 0;
