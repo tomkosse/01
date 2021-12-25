@@ -117,12 +117,7 @@ public class Cell
         X = x;
         Y = y;
     }
-
-    public override string ToString()
-    {
-        return $"Cell {X}:{Y} - {Value}";
-    }
-
+    
     public int Move()
     {
         if (CanMove)
