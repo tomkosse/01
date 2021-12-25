@@ -34,14 +34,14 @@ static Cell[] GetCellMatrix(char[][] numberMatrix)
             cells[y][x] = new Cell(value, x, y);
         }
     }
-
-    foreach (var cell in cells.SelectMany(o => o))
+    var arr = cells.SelectMany(o => o).ToArray();
+    foreach (var cell in arr)
     {
         var neighbours = GetAdjecentCells(cells, cell.Y, cell.X);
         cell.East = neighbours.east;
         cell.South = neighbours.south;
     }
-    return cells.SelectMany(o => o).ToArray();
+    return arr;
 }
 
 static (Cell south, Cell east) GetAdjecentCells(Cell[][] cellMatrix, int y, int x)
