@@ -5,18 +5,26 @@ var sw = Stopwatch.StartNew();
 
 var allCells = GetCellMatrix(lines.Select(l => l.ToCharArray()).ToArray());
 
-int countMoved = 1;
+int countMoved;
 int step = 0;
 
-while (countMoved > 0)
+do
 {
     countMoved = 0;
-    var eastbound = allCells.Where(c => c.Eastbound && c.CanMove).ToList();
-    countMoved += eastbound.Sum(c => c.Move());
-    var southbound = allCells.Where(c => c.Southbound && c.CanMove).ToList();
-    countMoved += southbound.Sum(c => c.Move());
+    var eastbound = allCells.Where(c => c.Eastbound && c.CanMove).ToArray();
+    for(int i=0; i < eastbound.Length; i++)
+    {
+        countMoved += eastbound[i].Move();
+    }
+    var southbound = allCells.Where(c => c.Southbound && c.CanMove).ToArray();    
+    for(int i=0; i < southbound.Length; i++)
+    {
+        countMoved += southbound[i].Move();
+    }
     step++;
 }
+while(countMoved > 0);
+
 sw.Stop();
 System.Console.WriteLine($"Done! {step} in {sw.ElapsedMilliseconds}ms");
 
@@ -53,12 +61,12 @@ static (Cell south, Cell east) GetAdjecentCells(Cell[][] cellMatrix, int y, int 
 
 public class Cell
 {
-    public char? Value { get; set; }
+    public char Value { get; set; }
 
     public int X { get; }
     public int Y { get; }
 
-    public bool Occupied => Value.HasValue;
+    public bool Occupied => Value != '.';
 
     public Cell South { get; set; }
     public Cell East { get; set; }
@@ -71,7 +79,7 @@ public class Cell
 
     public Cell(char value, int x, int y)
     {
-        Value = value == '.' ? null : value;
+        Value = value;
 
         X = x;
         Y = y;
@@ -89,7 +97,7 @@ public class Cell
             {
                 South.Value = this.Value;
             }
-            this.Value = null;
+            this.Value = '.';
             return 1;
         }
         return 0;
