@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -69,12 +70,16 @@ namespace _16
         static void Main(string[] args)
         {
             var hexLine = File.ReadAllLines(args[0])[0];
-            var bitstring = string.Join("", Convert.FromHexString(hexLine).SelectMany(b => new[] { Convert.ToString((byte)(b >> 4 & 0xF), 2).PadLeft(4, '0'), Convert.ToString((byte)(b & 0xF), 2).PadLeft(4, '0') }));
-
+            var sw = Stopwatch.StartNew();
+            var bitstring = string.Join("", Convert.FromHexString(hexLine).Select(b => Convert.ToString((byte)(b >> 4 & 0xF), 2).PadLeft(4, '0') + Convert.ToString((byte)(b & 0xF), 2).PadLeft(4, '0')));
+            
             var rootPacket = ParsePackets(bitstring, out int _);
-
-            System.Console.WriteLine("Part 1: " + rootPacket.GetVersionSum());
-            System.Console.WriteLine("Part 2: " + rootPacket.GetValue());
+            int versionSum = rootPacket.GetVersionSum();
+            long value = rootPacket.GetValue();
+            sw.Stop();
+            System.Console.WriteLine($"Part 1: {versionSum}");
+            System.Console.WriteLine($"Part 2: {value}");
+            System.Console.WriteLine($"Done in {sw.ElapsedMilliseconds}ms");
         }
 
         private static Packet ParsePackets(string inputString, out int charsRead)
